@@ -86,7 +86,7 @@ margin-top:10px;
 <input id="cedula" placeholder="Cédula">
 <input id="password" type="password" placeholder="Contraseña">
 
-<button onclick="login()">Entrar</button>
+<button onclick="iniciarSesion()">Entrar</button>
 
 <div id="msgLogin" class="mensaje"></div>
 </section>
@@ -136,9 +136,10 @@ const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxcTc7PtW4v9lXy4ibA8
 
 let usuario = null;
 
-function login(){
-let c = cedula.value.trim();
-let p = password.value.trim();
+function iniciarSesion(){
+let c = document.getElementById("cedula").value.trim();
+let p = document.getElementById("password").value.trim();
+let msgLogin = document.getElementById("msgLogin");
 
 if(!c || !p){
 msgLogin.innerHTML="Debe completar los campos";
@@ -146,49 +147,54 @@ msgLogin.className="mensaje error";
 return;
 }
 
+msgLogin.innerHTML="Validando usuario...";
+msgLogin.className="mensaje";
+
 let cb="cb"+Date.now();
 
-window[cb]=r=>{
+window[cb]=function(r){
 if(r.ok){
 usuario=r.usuario;
 
-login.style.display="none";
-panel.classList.remove("oculto");
+document.getElementById("login").classList.add("oculto");
+document.getElementById("panel").classList.remove("oculto");
 
-infoUsuario.innerHTML=`
+document.getElementById("infoUsuario").innerHTML=`
 <b>${usuario.nombre}</b><br>
 ${usuario.rol}<br>
 ${usuario.centroSede}
 `;
 
 }else{
-msgLogin.innerHTML=r.mensaje;
+msgLogin.innerHTML=r.mensaje || "Error en login";
 msgLogin.className="mensaje error";
 }
 };
 
 let s=document.createElement("script");
-s.src=`${URL_SCRIPT}?accion=login&cedula=${c}&password=${p}&callback=${cb}`;
+s.src=`${URL_SCRIPT}?accion=login&cedula=${encodeURIComponent(c)}&password=${encodeURIComponent(p)}&callback=${cb}`;
 document.body.appendChild(s);
 }
 
 function abrirAsistencia(){
-panel.classList.add("oculto");
-asistencia.classList.remove("oculto");
+document.getElementById("panel").classList.add("oculto");
+document.getElementById("asistencia").classList.remove("oculto");
 
-infoUsuarioAsistencia.innerHTML=`
+document.getElementById("infoUsuarioAsistencia").innerHTML=`
 <b>${usuario.nombre}</b><br>
 ${usuario.centroSede}
 `;
 }
 
 function volver(){
-asistencia.classList.add("oculto");
-panel.classList.remove("oculto");
+document.getElementById("asistencia").classList.add("oculto");
+document.getElementById("panel").classList.remove("oculto");
 }
 
 function cargar(){
-let g=grupo.value;
+let g=document.getElementById("grupo").value;
+let msg=document.getElementById("msg");
+let lista=document.getElementById("lista");
 
 if(!g){
 msg.innerHTML="Seleccione un grupo";
@@ -201,7 +207,7 @@ msg.className="mensaje";
 
 let cb="cb"+Date.now();
 
-window[cb]=r=>{
+window[cb]=function(r){
 lista.innerHTML="";
 
 if(r.ok && r.estudiantes.length>0){
