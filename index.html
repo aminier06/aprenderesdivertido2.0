@@ -395,13 +395,18 @@
   }
 
   function abrirModulo(modulo) {
-    if (modulo === "asistencia") {
-      abrirModuloAsistencia();
-    } else {
-      alert("Módulo seleccionado: " + modulo + ". En el próximo paso construiremos esta pantalla.");
-    }
+  if (modulo === "asistencia") {
+    abrirModuloAsistencia();
+    return;
   }
 
+  if (modulo === "evaluaciones") {
+    window.open("https://aminier06.github.io/evaluacioncampamento/", "_blank");
+    return;
+  }
+
+  alert("Módulo seleccionado: " + modulo + ". En el próximo paso construiremos esta pantalla.");
+}
   function abrirModuloAsistencia() {
     if (!usuarioActual) {
       alert("Debe iniciar sesión.");
