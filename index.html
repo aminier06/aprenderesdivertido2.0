@@ -34,9 +34,7 @@
       margin-bottom: 20px;
     }
 
-    h1, h2, h3 {
-      margin-top: 0;
-    }
+    h1, h2, h3 { margin-top: 0; }
 
     label {
       display: block;
@@ -70,35 +68,23 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #0b3a63;
-    }
+    button:hover { background: #0b3a63; }
 
     .btn-secundario {
       background: #64748b;
       margin-left: 8px;
     }
 
-    .btn-secundario:hover {
-      background: #475569;
-    }
+    .btn-secundario:hover { background: #475569; }
 
     .mensaje {
       margin-top: 15px;
       font-weight: bold;
     }
 
-    .error {
-      color: #b91c1c;
-    }
-
-    .ok {
-      color: #166534;
-    }
-
-    .oculto {
-      display: none;
-    }
+    .error { color: #b91c1c; }
+    .ok { color: #166534; }
+    .oculto { display: none; }
 
     .grid {
       display: grid;
@@ -144,9 +130,7 @@
       gap: 15px;
     }
 
-    .info-estudiante {
-      flex: 1;
-    }
+    .info-estudiante { flex: 1; }
 
     .opciones-asistencia {
       display: flex;
@@ -252,6 +236,21 @@
     <div id="mensajeLogin" class="mensaje"></div>
   </section>
 
+  <section id="cambioPassword" class="tarjeta oculto">
+    <h2>Cambiar contraseña</h2>
+    <p>Por seguridad, debe cambiar su contraseña antes de continuar.</p>
+
+    <label for="nuevaPassword">Nueva contraseña</label>
+    <input type="password" id="nuevaPassword" placeholder="Digite la nueva contraseña">
+
+    <label for="confirmarPassword">Confirmar contraseña</label>
+    <input type="password" id="confirmarPassword" placeholder="Repita la nueva contraseña">
+
+    <button onclick="guardarNuevaPassword()">Guardar contraseña</button>
+
+    <div id="mensajeCambioPassword" class="mensaje"></div>
+  </section>
+
   <section id="panel" class="tarjeta oculto">
     <h2>Panel principal</h2>
 
@@ -324,7 +323,7 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby2oebrI3nBZ__Rvz4F9VmuP2TlY6KWRZGXbKlCYO4LJN6b-z9YfwOkWT6n8Tj7GsHTjQ/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby8U1xAiYvzoVlrQpnF_j2kdqgOk_1TRHJIaYX6e3cJxLvTeYGq-ew_4BI5iH6rY_X_Gw/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
@@ -336,6 +335,7 @@
       usuarioActual = JSON.parse(usuarioGuardado);
 
       document.getElementById("login").classList.add("oculto");
+      document.getElementById("cambioPassword").classList.add("oculto");
       document.getElementById("panel").classList.remove("oculto");
 
       mostrarDatosUsuario(usuarioActual);
@@ -371,12 +371,18 @@
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
         usuarioActual = respuesta.usuario;
-        localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
 
-        document.getElementById("login").classList.add("oculto");
-        document.getElementById("panel").classList.remove("oculto");
+        if (normalizarTexto(usuarioActual.debeCambiarPassword).toUpperCase() === "SI") {
+          mostrarCambioPassword(usuarioActual);
+        } else {
+          localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
 
-        mostrarDatosUsuario(usuarioActual);
+          document.getElementById("login").classList.add("oculto");
+          document.getElementById("cambioPassword").classList.add("oculto");
+          document.getElementById("panel").classList.remove("oculto");
+
+          mostrarDatosUsuario(usuarioActual);
+        }
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudo iniciar sesión.";
         mensaje.classList.add("error");
@@ -391,6 +397,92 @@
       + "?accion=login"
       + "&cedula=" + encodeURIComponent(cedula)
       + "&password=" + encodeURIComponent(password)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function mostrarCambioPassword(usuario) {
+    usuarioActual = usuario;
+
+    document.getElementById("login").classList.add("oculto");
+    document.getElementById("panel").classList.add("oculto");
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("cambioPassword").classList.remove("oculto");
+
+    document.getElementById("nuevaPassword").value = "";
+    document.getElementById("confirmarPassword").value = "";
+    document.getElementById("mensajeCambioPassword").textContent = "";
+    document.getElementById("mensajeCambioPassword").className = "mensaje";
+  }
+
+  function guardarNuevaPassword() {
+    const nueva = document.getElementById("nuevaPassword").value.trim();
+    const confirmar = document.getElementById("confirmarPassword").value.trim();
+    const mensaje = document.getElementById("mensajeCambioPassword");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!usuarioActual || !usuarioActual.cedula) {
+      mensaje.textContent = "No se pudo identificar el usuario.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!nueva || !confirmar) {
+      mensaje.textContent = "Debe completar ambos campos.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (nueva.length < 6) {
+      mensaje.textContent = "La nueva contraseña debe tener al menos 6 caracteres.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (nueva !== confirmar) {
+      mensaje.textContent = "Las contraseñas no coinciden.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const payload = {
+      cedula: usuarioActual.cedula,
+      passwordNueva: nueva
+    };
+
+    mensaje.textContent = "Guardando nueva contraseña...";
+
+    const callbackName = "callbackCambio_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        usuarioActual.debeCambiarPassword = "NO";
+        localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
+
+        mensaje.textContent = "Contraseña actualizada correctamente.";
+        mensaje.classList.add("ok");
+
+        setTimeout(function() {
+          document.getElementById("cambioPassword").classList.add("oculto");
+          document.getElementById("panel").classList.remove("oculto");
+          mostrarDatosUsuario(usuarioActual);
+        }, 900);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo cambiar la contraseña.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=cambiarPassword"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -798,10 +890,14 @@
 
     document.getElementById("cedula").value = "";
     document.getElementById("password").value = "";
+    document.getElementById("nuevaPassword").value = "";
+    document.getElementById("confirmarPassword").value = "";
     document.getElementById("mensajeLogin").textContent = "";
+    document.getElementById("mensajeCambioPassword").textContent = "";
 
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("cambioPassword").classList.add("oculto");
     document.getElementById("login").classList.remove("oculto");
   }
 </script>
