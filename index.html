@@ -9,14 +9,65 @@
 body {margin:0;font-family:Arial;background:#f2f6fb;}
 header {background:#0f4c81;color:white;padding:20px;text-align:center;}
 .contenedor {max-width:900px;margin:40px auto;padding:20px;}
-.tarjeta {background:white;border-radius:14px;padding:25px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px;}
-.grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:25px;}
-.modulo {background:#e8f1fb;border-left:6px solid #0f4c81;padding:20px;border-radius:12px;cursor:pointer;}
+
+.tarjeta {
+background:white;
+border-radius:14px;
+padding:25px;
+box-shadow:0 8px 20px rgba(0,0,0,0.08);
+margin-bottom:20px;
+}
+
+.grid {
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-top:25px;
+}
+
+.modulo {
+background:#e8f1fb;
+border-left:6px solid #0f4c81;
+padding:20px;
+border-radius:12px;
+cursor:pointer;
+}
+
 .modulo:hover {background:#dbeafe;}
+
 .oculto {display:none;}
-.estudiante {background:#f8fafc;border:1px solid #dbe3ef;border-radius:10px;padding:12px;margin-top:10px;}
+
+input, select {
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+button {
+margin-top:15px;
+background:#0f4c81;
+color:white;
+border:none;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.mensaje {margin-top:10px;font-weight:bold;}
+.error {color:red;}
+.ok {color:green;}
+
+.estudiante {
+background:#f8fafc;
+border:1px solid #dbe3ef;
+border-radius:10px;
+padding:12px;
+margin-top:10px;
+}
+
 .opciones label {margin-right:10px;}
-button {margin-top:15px;background:#0f4c81;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;}
 </style>
 </head>
 
@@ -31,15 +82,19 @@ button {margin-top:15px;background:#0f4c81;color:white;border:none;padding:10px;
 <!-- LOGIN -->
 <section id="login" class="tarjeta">
 <h2>Inicio de sesión</h2>
+
 <input id="cedula" placeholder="Cédula">
 <input id="password" type="password" placeholder="Contraseña">
+
 <button onclick="login()">Entrar</button>
-<div id="msgLogin"></div>
+
+<div id="msgLogin" class="mensaje"></div>
 </section>
 
 <!-- PANEL -->
 <section id="panel" class="tarjeta oculto">
-<h2>Panel</h2>
+<h2>Panel principal</h2>
+
 <div id="infoUsuario"></div>
 
 <div class="grid">
@@ -57,6 +112,8 @@ button {margin-top:15px;background:#0f4c81;color:white;border:none;padding:10px;
 <section id="asistencia" class="tarjeta oculto">
 <h2>Pase de lista</h2>
 
+<div id="infoUsuarioAsistencia"></div>
+
 <select id="grupo">
 <option value="">Seleccione grupo</option>
 <option>EXPLORADORES</option>
@@ -66,7 +123,7 @@ button {margin-top:15px;background:#0f4c81;color:white;border:none;padding:10px;
 
 <button onclick="cargar()">Cargar estudiantes</button>
 
-<div id="msg"></div>
+<div id="msg" class="mensaje"></div>
 <div id="lista"></div>
 
 <button onclick="volver()">Volver</button>
@@ -80,16 +137,33 @@ const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxcTc7PtW4v9lXy4ibA8
 let usuario = null;
 
 function login(){
-const c = cedula.value;
-const p = password.value;
-const cb = "cb"+Date.now();
+let c = cedula.value.trim();
+let p = password.value.trim();
 
-window[cb] = r=>{
+if(!c || !p){
+msgLogin.innerHTML="Debe completar los campos";
+msgLogin.className="mensaje error";
+return;
+}
+
+let cb="cb"+Date.now();
+
+window[cb]=r=>{
 if(r.ok){
 usuario=r.usuario;
+
 login.style.display="none";
 panel.classList.remove("oculto");
-infoUsuario.innerHTML=r.usuario.nombre;
+
+infoUsuario.innerHTML=`
+<b>${usuario.nombre}</b><br>
+${usuario.rol}<br>
+${usuario.centroSede}
+`;
+
+}else{
+msgLogin.innerHTML=r.mensaje;
+msgLogin.className="mensaje error";
 }
 };
 
@@ -101,6 +175,11 @@ document.body.appendChild(s);
 function abrirAsistencia(){
 panel.classList.add("oculto");
 asistencia.classList.remove("oculto");
+
+infoUsuarioAsistencia.innerHTML=`
+<b>${usuario.nombre}</b><br>
+${usuario.centroSede}
+`;
 }
 
 function volver(){
@@ -110,25 +189,41 @@ panel.classList.remove("oculto");
 
 function cargar(){
 let g=grupo.value;
+
+if(!g){
+msg.innerHTML="Seleccione un grupo";
+msg.className="mensaje error";
+return;
+}
+
+msg.innerHTML="Cargando...";
+msg.className="mensaje";
+
 let cb="cb"+Date.now();
 
 window[cb]=r=>{
 lista.innerHTML="";
-if(r.estudiantes){
+
+if(r.ok && r.estudiantes.length>0){
+msg.innerHTML="Estudiantes cargados";
+msg.className="mensaje ok";
+
 r.estudiantes.forEach(e=>{
 lista.innerHTML+=`
 <div class="estudiante">
 <b>${e.nombre}</b><br>
-<div class="opciones">
-<label><input type="radio" name="${e.idEstudiante}" value="P">Presente</label>
+
+<label><input type="radio" name="${e.idEstudiante}" value="P" checked>Presente</label>
 <label><input type="radio" name="${e.idEstudiante}" value="T">Tardanza</label>
 <label><input type="radio" name="${e.idEstudiante}" value="A">Ausente</label>
 <label><input type="radio" name="${e.idEstudiante}" value="E">Excusa</label>
-</div>
+
 </div>`;
 });
+
 }else{
-msg.innerHTML="No hay estudiantes";
+msg.innerHTML="No se encontraron estudiantes";
+msg.className="mensaje error";
 }
 };
 
