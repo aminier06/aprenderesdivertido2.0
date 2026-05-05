@@ -288,7 +288,7 @@
     <div class="datos-usuario" id="datosUsuarioAsistencia"></div>
 
     <label for="fechaAsistencia">Fecha de asistencia</label>
-    <input type="date" id="fechaAsistencia">
+    <input type="date" id="fechaAsistencia" onchange="cargarEstudiantes()">
 
     <label for="grupoAsistencia">Grupo</label>
     <select id="grupoAsistencia" onchange="cargarEstudiantes()">
@@ -436,6 +436,7 @@
 
   function cargarEstudiantes() {
     const grupo = document.getElementById("grupoAsistencia").value;
+    const fechaAsistencia = document.getElementById("fechaAsistencia").value;
     const mensaje = document.getElementById("mensajeAsistencia");
     const lista = document.getElementById("listaEstudiantes");
 
@@ -450,6 +451,12 @@
 
     if (!usuarioActual) {
       mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!fechaAsistencia) {
+      mensaje.textContent = "Debe seleccionar la fecha de asistencia.";
       mensaje.classList.add("error");
       return;
     }
@@ -489,6 +496,7 @@
       + "?accion=estudiantes"
       + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
       + "&grupo=" + encodeURIComponent(grupo)
+      + "&fechaAsistencia=" + encodeURIComponent(fechaAsistencia)
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -499,6 +507,8 @@
     lista.innerHTML = "";
 
     estudiantes.forEach(function(estudiante, index) {
+      const estado = estudiante.estadoRegistrado || "Presente";
+
       const div = document.createElement("div");
       div.className = "estudiante";
 
@@ -511,22 +521,22 @@
 
           <div class="opciones-asistencia">
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" checked>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" ${estado === "Presente" ? "checked" : ""}>
               Presente
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza">
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza" ${estado === "Tardanza" ? "checked" : ""}>
               Tardanza
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente">
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente" ${estado === "Ausente" ? "checked" : ""}>
               Ausente
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa">
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa" ${estado === "Excusa" ? "checked" : ""}>
               Excusa
             </label>
           </div>
