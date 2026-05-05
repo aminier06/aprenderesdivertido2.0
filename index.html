@@ -132,11 +132,22 @@
       margin-top: 12px;
     }
 
+    .fila-estudiante {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .info-estudiante {
+      flex: 1;
+    }
+
     .opciones-asistencia {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .opciones-asistencia label {
@@ -147,6 +158,7 @@
       border-radius: 8px;
       padding: 8px;
       cursor: pointer;
+      white-space: nowrap;
     }
 
     .opciones-asistencia input {
@@ -159,6 +171,17 @@
       margin: 30px;
       color: #64748b;
       font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .fila-estudiante {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .opciones-asistencia {
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -230,14 +253,13 @@
     <input type="date" id="fechaAsistencia">
 
     <label for="grupoAsistencia">Grupo</label>
-    <select id="grupoAsistencia">
+    <select id="grupoAsistencia" onchange="cargarEstudiantes()">
       <option value="">Seleccione un grupo</option>
       <option value="EXPLORADORES">EXPLORADORES</option>
       <option value="CREADORES">CREADORES</option>
       <option value="INNOVADORES">INNOVADORES</option>
     </select>
 
-    <button onclick="cargarEstudiantes()">Cargar estudiantes</button>
     <button onclick="guardarAsistencia()" id="btnGuardarAsistencia" class="oculto">Guardar asistencia</button>
 
     <div id="mensajeAsistencia" class="mensaje"></div>
@@ -353,6 +375,7 @@
     lista.innerHTML = "";
     estudiantesActuales = [];
     document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").disabled = false;
 
     if (!usuarioActual) {
       mensaje.textContent = "Debe iniciar sesión.";
@@ -361,8 +384,7 @@
     }
 
     if (!grupo) {
-      mensaje.textContent = "Debe seleccionar un grupo.";
-      mensaje.classList.add("error");
+      mensaje.textContent = "";
       return;
     }
 
@@ -410,29 +432,33 @@
       div.className = "estudiante";
 
       div.innerHTML = `
-        <strong>${index + 1}. ${estudiante.nombre || ""}</strong><br>
-        <small>ID: ${estudiante.idEstudiante || ""} | Grado: ${estudiante.grado || ""}</small>
+        <div class="fila-estudiante">
+          <div class="info-estudiante">
+            <strong>${index + 1}. ${estudiante.nombre || ""}</strong><br>
+            <small>ID: ${estudiante.idEstudiante || ""} | Grado: ${estudiante.grado || ""}</small>
+          </div>
 
-        <div class="opciones-asistencia">
-          <label>
-            <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" checked>
-            Presente
-          </label>
+          <div class="opciones-asistencia">
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" checked>
+              Presente
+            </label>
 
-          <label>
-            <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza">
-            Tardanza
-          </label>
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza">
+              Tardanza
+            </label>
 
-          <label>
-            <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente">
-            Ausente
-          </label>
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente">
+              Ausente
+            </label>
 
-          <label>
-            <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa">
-            Excusa
-          </label>
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa">
+              Excusa
+            </label>
+          </div>
         </div>
       `;
 
