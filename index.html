@@ -34,7 +34,9 @@
       margin-bottom: 20px;
     }
 
-    h1, h2, h3 { margin-top: 0; }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
 
     label {
       display: block;
@@ -63,23 +65,35 @@
       cursor: pointer;
     }
 
-    button:hover { background: #0b3a63; }
+    button:hover {
+      background: #0b3a63;
+    }
 
     .btn-secundario {
       background: #64748b;
       margin-left: 8px;
     }
 
-    .btn-secundario:hover { background: #475569; }
+    .btn-secundario:hover {
+      background: #475569;
+    }
 
     .mensaje {
       margin-top: 15px;
       font-weight: bold;
     }
 
-    .error { color: #b91c1c; }
-    .ok { color: #166534; }
-    .oculto { display: none; }
+    .error {
+      color: #b91c1c;
+    }
+
+    .ok {
+      color: #166534;
+    }
+
+    .oculto {
+      display: none;
+    }
 
     .grid {
       display: grid;
@@ -125,7 +139,9 @@
       gap: 15px;
     }
 
-    .info-estudiante { flex: 1; }
+    .info-estudiante {
+      flex: 1;
+    }
 
     .opciones-asistencia {
       display: flex;
@@ -301,8 +317,419 @@
 <footer>
   © 2026 Ministerio de Educación – Desarrollado por Aneudy Minier
 </footer>
+
 <script>
-  ...
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzL0N9F7huQLxqo6yB_KA_nIURAsLdUOP_Z2dNdt155BuouF9JBTMcr2c9IWdJGv7UyxQ/exec";
+
+  let usuarioActual = null;
+  let estudiantesActuales = [];
+
+  window.onload = function() {
+    const usuarioGuardado = localStorage.getItem("usuarioCampamento");
+
+    if (usuarioGuardado) {
+      usuarioActual = JSON.parse(usuarioGuardado);
+
+      document.getElementById("login").classList.add("oculto");
+      document.getElementById("panel").classList.remove("oculto");
+
+      mostrarDatosUsuario(usuarioActual);
+    }
+  };
+
+  function iniciarSesion() {
+    const cedula = document.getElementById("cedula").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const mensaje = document.getElementById("mensajeLogin");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!cedula || !password) {
+      mensaje.textContent = "Debe digitar la cédula y la contraseña.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    mensaje.textContent = "Validando usuario...";
+
+    const callbackName = "callbackLogin_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        usuarioActual = respuesta.usuario;
+        localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
+
+        document.getElementById("login").classList.add("oculto");
+        document.getElementById("panel").classList.remove("oculto");
+
+        mostrarDatosUsuario(usuarioActual);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo iniciar sesión.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=login"
+      + "&cedula=" + encodeURIComponent(cedula)
+      + "&password=" + encodeURIComponent(password)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function mostrarDatosUsuario(usuario) {
+    document.getElementById("datosUsuario").innerHTML = `
+      <strong>Usuario:</strong> ${usuario.nombre || ""}<br>
+      <strong>Cédula:</strong> ${usuario.cedula || ""}<br>
+      <strong>Rol:</strong> ${usuario.rol || ""}<br>
+      <strong>Regional:</strong> ${usuario.regional || ""}<br>
+      <strong>Distrito:</strong> ${usuario.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${usuario.centroSede || ""}
+    `;
+  }
+
+  function abrirModulo(modulo) {
+    if (modulo === "asistencia") {
+      abrirModuloAsistencia();
+    } else {
+      alert("Módulo seleccionado: " + modulo + ". En el próximo paso construiremos esta pantalla.");
+    }
+  }
+
+  function abrirModuloAsistencia() {
+    if (!usuarioActual) {
+      alert("Debe iniciar sesión.");
+      return;
+    }
+
+    document.getElementById("panel").classList.add("oculto");
+    document.getElementById("moduloAsistencia").classList.remove("oculto");
+
+    document.getElementById("datosUsuarioAsistencia").innerHTML = `
+      <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
+      <strong>Rol:</strong> ${usuarioActual.rol || ""}<br>
+      <strong>Regional:</strong> ${usuarioActual.regional || ""}<br>
+      <strong>Distrito:</strong> ${usuarioActual.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${usuarioActual.centroSede || ""}
+    `;
+
+    const hoy = new Date().toISOString().split("T")[0];
+    document.getElementById("fechaAsistencia").value = hoy;
+
+    document.getElementById("grupoAsistencia").value = "";
+    document.getElementById("mensajeAsistencia").textContent = "";
+    document.getElementById("mensajeAsistencia").className = "mensaje";
+    document.getElementById("listaEstudiantes").innerHTML = "";
+    document.getElementById("tablaAsistenciaGrupo").innerHTML = "";
+    document.getElementById("consultaAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").disabled = false;
+
+    estudiantesActuales = [];
+  }
+
+  function cargarEstudiantes() {
+    const grupo = document.getElementById("grupoAsistencia").value;
+    const mensaje = document.getElementById("mensajeAsistencia");
+    const lista = document.getElementById("listaEstudiantes");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    lista.innerHTML = "";
+    estudiantesActuales = [];
+    document.getElementById("tablaAsistenciaGrupo").innerHTML = "";
+    document.getElementById("consultaAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").disabled = false;
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!grupo) {
+      mensaje.textContent = "";
+      return;
+    }
+
+    mensaje.textContent = "Cargando estudiantes...";
+
+    const callbackName = "callbackEstudiantes_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        if (!respuesta.estudiantes || respuesta.estudiantes.length === 0) {
+          mensaje.textContent = "No se encontraron estudiantes para este grupo y centro sede.";
+          mensaje.classList.add("error");
+        } else {
+          estudiantesActuales = respuesta.estudiantes;
+          mensaje.textContent = "Estudiantes cargados: " + respuesta.estudiantes.length;
+          mensaje.classList.add("ok");
+          mostrarEstudiantes(respuesta.estudiantes);
+          document.getElementById("btnGuardarAsistencia").classList.remove("oculto");
+        }
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los estudiantes.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=estudiantes"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&grupo=" + encodeURIComponent(grupo)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function mostrarEstudiantes(estudiantes) {
+    const lista = document.getElementById("listaEstudiantes");
+    lista.innerHTML = "";
+
+    estudiantes.forEach(function(estudiante, index) {
+      const div = document.createElement("div");
+      div.className = "estudiante";
+
+      div.innerHTML = `
+        <div class="fila-estudiante">
+          <div class="info-estudiante">
+            <strong>${index + 1}. ${estudiante.nombre || ""}</strong><br>
+            <small>ID: ${estudiante.idEstudiante || ""} | Grado: ${estudiante.grado || ""}</small>
+          </div>
+
+          <div class="opciones-asistencia">
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" checked>
+              Presente
+            </label>
+
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza">
+              Tardanza
+            </label>
+
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente">
+              Ausente
+            </label>
+
+            <label>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa">
+              Excusa
+            </label>
+          </div>
+        </div>
+      `;
+
+      lista.appendChild(div);
+    });
+  }
+
+  function guardarAsistencia() {
+    const fechaAsistencia = document.getElementById("fechaAsistencia").value;
+    const grupo = document.getElementById("grupoAsistencia").value;
+    const mensaje = document.getElementById("mensajeAsistencia");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!fechaAsistencia) {
+      mensaje.textContent = "Debe seleccionar la fecha de asistencia.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!grupo) {
+      mensaje.textContent = "Debe seleccionar el grupo.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!estudiantesActuales || estudiantesActuales.length === 0) {
+      mensaje.textContent = "Debe cargar estudiantes antes de guardar.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const registros = estudiantesActuales.map(function(estudiante) {
+      const seleccionado = document.querySelector(
+        `input[name="asistencia_${estudiante.idEstudiante}"]:checked`
+      );
+
+      return {
+        idEstudiante: estudiante.idEstudiante,
+        nombre: estudiante.nombre,
+        grado: estudiante.grado || "",
+        estadoAsistencia: seleccionado ? seleccionado.value : "Presente"
+      };
+    });
+
+    const payload = {
+      cedula: usuarioActual.cedula,
+      fechaAsistencia: fechaAsistencia,
+      grupo: grupo,
+      registros: registros
+    };
+
+    mensaje.textContent = "Guardando asistencia...";
+
+    const callbackName = "callbackGuardar_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mensaje.textContent = respuesta.mensaje + " Registros guardados: " + respuesta.cantidad;
+        mensaje.classList.add("ok");
+        document.getElementById("btnGuardarAsistencia").disabled = true;
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asistencia.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=guardarAsistencia"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function consultarAsistenciaGrupo() {
+    const grupo = document.getElementById("grupoAsistencia").value;
+    const mensaje = document.getElementById("mensajeAsistencia");
+    const contenedor = document.getElementById("consultaAsistencia");
+    const tabla = document.getElementById("tablaAsistenciaGrupo");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    tabla.innerHTML = "";
+    contenedor.classList.add("oculto");
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!grupo) {
+      mensaje.textContent = "Debe seleccionar un grupo para consultar la asistencia.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    mensaje.textContent = "Consultando asistencia del grupo...";
+
+    const callbackName = "callbackConsulta_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        if (!respuesta.estudiantes || respuesta.estudiantes.length === 0) {
+          mensaje.textContent = "No hay asistencia registrada para este grupo.";
+          mensaje.classList.add("error");
+        } else {
+          mensaje.textContent = "Consulta cargada correctamente.";
+          mensaje.classList.add("ok");
+          construirTablaAsistencia(respuesta);
+          contenedor.classList.remove("oculto");
+        }
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo consultar la asistencia.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=consultarAsistencia"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&grupo=" + encodeURIComponent(grupo)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function construirTablaAsistencia(respuesta) {
+    const tabla = document.getElementById("tablaAsistenciaGrupo");
+    const fechas = respuesta.fechas || [];
+    const estudiantes = respuesta.estudiantes || [];
+
+    let html = "<table>";
+    html += "<thead><tr>";
+    html += "<th>Estudiante</th>";
+
+    fechas.forEach(function(fecha) {
+      html += `<th>${fecha}</th>`;
+    });
+
+    html += "<th>Presente</th>";
+    html += "<th>Tardanza</th>";
+    html += "<th>Ausente</th>";
+    html += "<th>Excusa</th>";
+    html += "</tr></thead><tbody>";
+
+    estudiantes.forEach(function(estudiante) {
+      html += "<tr>";
+      html += `<td>${estudiante.nombre || ""}</td>`;
+
+      fechas.forEach(function(fecha) {
+        html += `<td>${estudiante.asistencias[fecha] || ""}</td>`;
+      });
+
+      html += `<td>${estudiante.totales.Presente || 0}</td>`;
+      html += `<td>${estudiante.totales.Tardanza || 0}</td>`;
+      html += `<td>${estudiante.totales.Ausente || 0}</td>`;
+      html += `<td>${estudiante.totales.Excusa || 0}</td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    tabla.innerHTML = html;
+  }
+
+  function volverAlPanel() {
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("panel").classList.remove("oculto");
+  }
+
+  function cerrarSesion() {
+    usuarioActual = null;
+    estudiantesActuales = [];
+
+    localStorage.removeItem("usuarioCampamento");
+
+    document.getElementById("cedula").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("mensajeLogin").textContent = "";
+
+    document.getElementById("panel").classList.add("oculto");
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("login").classList.remove("oculto");
+  }
 </script>
 
 </body>
