@@ -21,7 +21,7 @@
     }
 
     .contenedor {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 40px auto;
       padding: 20px;
     }
@@ -34,9 +34,7 @@
       margin-bottom: 20px;
     }
 
-    h1, h2, h3 {
-      margin-top: 0;
-    }
+    h1, h2, h3 { margin-top: 0; }
 
     label {
       display: block;
@@ -65,35 +63,23 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #0b3a63;
-    }
+    button:hover { background: #0b3a63; }
 
     .btn-secundario {
       background: #64748b;
       margin-left: 8px;
     }
 
-    .btn-secundario:hover {
-      background: #475569;
-    }
+    .btn-secundario:hover { background: #475569; }
 
     .mensaje {
       margin-top: 15px;
       font-weight: bold;
     }
 
-    .error {
-      color: #b91c1c;
-    }
-
-    .ok {
-      color: #166534;
-    }
-
-    .oculto {
-      display: none;
-    }
+    .error { color: #b91c1c; }
+    .ok { color: #166534; }
+    .oculto { display: none; }
 
     .grid {
       display: grid;
@@ -139,9 +125,7 @@
       gap: 15px;
     }
 
-    .info-estudiante {
-      flex: 1;
-    }
+    .info-estudiante { flex: 1; }
 
     .opciones-asistencia {
       display: flex;
@@ -164,6 +148,44 @@
     .opciones-asistencia input {
       width: auto;
       margin-right: 6px;
+    }
+
+    .tabla-contenedor {
+      margin-top: 20px;
+      overflow-x: auto;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 850px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #dbe3ef;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #e8f1fb;
+      font-weight: bold;
+    }
+
+    td:first-child, th:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 1;
+    }
+
+    th:first-child {
+      background: #e8f1fb;
+      z-index: 2;
     }
 
     footer {
@@ -261,9 +283,15 @@
     </select>
 
     <button onclick="guardarAsistencia()" id="btnGuardarAsistencia" class="oculto">Guardar asistencia</button>
+    <button onclick="consultarAsistenciaGrupo()" id="btnConsultarAsistencia" class="btn-secundario">Consultar asistencia del grupo</button>
 
     <div id="mensajeAsistencia" class="mensaje"></div>
     <div id="listaEstudiantes"></div>
+
+    <div id="consultaAsistencia" class="oculto">
+      <h3>Asistencia general del grupo</h3>
+      <div id="tablaAsistenciaGrupo" class="tabla-contenedor"></div>
+    </div>
 
     <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
   </section>
@@ -273,295 +301,8 @@
 <footer>
   © 2026 Ministerio de Educación – Desarrollado por Aneudy Minier
 </footer>
-
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyZj3duav6RktagpqrBLiSFuo9DQgJdwqQi7OZTtQ6KrszjgH6e6O_T1XfcES6qW_-Ejg/exec";
-
-  let usuarioActual = null;
-  let estudiantesActuales = [];
-
-  function iniciarSesion() {
-    const cedula = document.getElementById("cedula").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const mensaje = document.getElementById("mensajeLogin");
-
-    mensaje.textContent = "";
-    mensaje.className = "mensaje";
-
-    if (!cedula || !password) {
-      mensaje.textContent = "Debe digitar la cédula y la contraseña.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    mensaje.textContent = "Validando usuario...";
-
-    const callbackName = "callbackLogin_" + Date.now();
-
-    window[callbackName] = function(respuesta) {
-      if (respuesta.ok) {
-        usuarioActual = respuesta.usuario;
-
-        document.getElementById("login").classList.add("oculto");
-        document.getElementById("panel").classList.remove("oculto");
-
-        mostrarDatosUsuario(usuarioActual);
-      } else {
-        mensaje.textContent = respuesta.mensaje || "No se pudo iniciar sesión.";
-        mensaje.classList.add("error");
-      }
-
-      delete window[callbackName];
-      script.remove();
-    };
-
-    const script = document.createElement("script");
-    script.src = URL_SCRIPT
-      + "?accion=login"
-      + "&cedula=" + encodeURIComponent(cedula)
-      + "&password=" + encodeURIComponent(password)
-      + "&callback=" + callbackName;
-
-    document.body.appendChild(script);
-  }
-
-  function mostrarDatosUsuario(usuario) {
-    document.getElementById("datosUsuario").innerHTML = `
-      <strong>Usuario:</strong> ${usuario.nombre || ""}<br>
-      <strong>Cédula:</strong> ${usuario.cedula || ""}<br>
-      <strong>Rol:</strong> ${usuario.rol || ""}<br>
-      <strong>Regional:</strong> ${usuario.regional || ""}<br>
-      <strong>Distrito:</strong> ${usuario.distrito || ""}<br>
-      <strong>Centro sede:</strong> ${usuario.centroSede || ""}
-    `;
-  }
-
-  function abrirModulo(modulo) {
-    if (modulo === "asistencia") {
-      abrirModuloAsistencia();
-    } else {
-      alert("Módulo seleccionado: " + modulo + ". En el próximo paso construiremos esta pantalla.");
-    }
-  }
-
-  function abrirModuloAsistencia() {
-    if (!usuarioActual) {
-      alert("Debe iniciar sesión.");
-      return;
-    }
-
-    document.getElementById("panel").classList.add("oculto");
-    document.getElementById("moduloAsistencia").classList.remove("oculto");
-
-    document.getElementById("datosUsuarioAsistencia").innerHTML = `
-      <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
-      <strong>Rol:</strong> ${usuarioActual.rol || ""}<br>
-      <strong>Regional:</strong> ${usuarioActual.regional || ""}<br>
-      <strong>Distrito:</strong> ${usuarioActual.distrito || ""}<br>
-      <strong>Centro sede:</strong> ${usuarioActual.centroSede || ""}
-    `;
-
-    const hoy = new Date().toISOString().split("T")[0];
-    document.getElementById("fechaAsistencia").value = hoy;
-  }
-
-  function cargarEstudiantes() {
-    const grupo = document.getElementById("grupoAsistencia").value;
-    const mensaje = document.getElementById("mensajeAsistencia");
-    const lista = document.getElementById("listaEstudiantes");
-
-    mensaje.textContent = "";
-    mensaje.className = "mensaje";
-    lista.innerHTML = "";
-    estudiantesActuales = [];
-    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
-    document.getElementById("btnGuardarAsistencia").disabled = false;
-
-    if (!usuarioActual) {
-      mensaje.textContent = "Debe iniciar sesión.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    if (!grupo) {
-      mensaje.textContent = "";
-      return;
-    }
-
-    mensaje.textContent = "Cargando estudiantes...";
-
-    const callbackName = "callbackEstudiantes_" + Date.now();
-
-    window[callbackName] = function(respuesta) {
-      if (respuesta.ok) {
-        if (!respuesta.estudiantes || respuesta.estudiantes.length === 0) {
-          mensaje.textContent = "No se encontraron estudiantes para este grupo y centro sede.";
-          mensaje.classList.add("error");
-        } else {
-          estudiantesActuales = respuesta.estudiantes;
-          mensaje.textContent = "Estudiantes cargados: " + respuesta.estudiantes.length;
-          mensaje.classList.add("ok");
-          mostrarEstudiantes(respuesta.estudiantes);
-          document.getElementById("btnGuardarAsistencia").classList.remove("oculto");
-        }
-      } else {
-        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los estudiantes.";
-        mensaje.classList.add("error");
-      }
-
-      delete window[callbackName];
-      script.remove();
-    };
-
-    const script = document.createElement("script");
-    script.src = URL_SCRIPT
-      + "?accion=estudiantes"
-      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
-      + "&grupo=" + encodeURIComponent(grupo)
-      + "&callback=" + callbackName;
-
-    document.body.appendChild(script);
-  }
-
-  function mostrarEstudiantes(estudiantes) {
-    const lista = document.getElementById("listaEstudiantes");
-    lista.innerHTML = "";
-
-    estudiantes.forEach(function(estudiante, index) {
-      const div = document.createElement("div");
-      div.className = "estudiante";
-
-      div.innerHTML = `
-        <div class="fila-estudiante">
-          <div class="info-estudiante">
-            <strong>${index + 1}. ${estudiante.nombre || ""}</strong><br>
-            <small>ID: ${estudiante.idEstudiante || ""} | Grado: ${estudiante.grado || ""}</small>
-          </div>
-
-          <div class="opciones-asistencia">
-            <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" checked>
-              Presente
-            </label>
-
-            <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza">
-              Tardanza
-            </label>
-
-            <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente">
-              Ausente
-            </label>
-
-            <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa">
-              Excusa
-            </label>
-          </div>
-        </div>
-      `;
-
-      lista.appendChild(div);
-    });
-  }
-
-  function guardarAsistencia() {
-    const fechaAsistencia = document.getElementById("fechaAsistencia").value;
-    const grupo = document.getElementById("grupoAsistencia").value;
-    const mensaje = document.getElementById("mensajeAsistencia");
-
-    mensaje.textContent = "";
-    mensaje.className = "mensaje";
-
-    if (!usuarioActual) {
-      mensaje.textContent = "Debe iniciar sesión.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    if (!fechaAsistencia) {
-      mensaje.textContent = "Debe seleccionar la fecha de asistencia.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    if (!grupo) {
-      mensaje.textContent = "Debe seleccionar el grupo.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    if (!estudiantesActuales || estudiantesActuales.length === 0) {
-      mensaje.textContent = "Debe cargar estudiantes antes de guardar.";
-      mensaje.classList.add("error");
-      return;
-    }
-
-    const registros = estudiantesActuales.map(function(estudiante) {
-      const seleccionado = document.querySelector(
-        `input[name="asistencia_${estudiante.idEstudiante}"]:checked`
-      );
-
-      return {
-        idEstudiante: estudiante.idEstudiante,
-        nombre: estudiante.nombre,
-        grado: estudiante.grado || "",
-        estadoAsistencia: seleccionado ? seleccionado.value : "Presente"
-      };
-    });
-
-    const payload = {
-      cedula: usuarioActual.cedula,
-      fechaAsistencia: fechaAsistencia,
-      grupo: grupo,
-      registros: registros
-    };
-
-    mensaje.textContent = "Guardando asistencia...";
-
-    const callbackName = "callbackGuardar_" + Date.now();
-
-    window[callbackName] = function(respuesta) {
-      if (respuesta.ok) {
-        mensaje.textContent = respuesta.mensaje + " Registros guardados: " + respuesta.cantidad;
-        mensaje.classList.add("ok");
-        document.getElementById("btnGuardarAsistencia").disabled = true;
-      } else {
-        mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asistencia.";
-        mensaje.classList.add("error");
-      }
-
-      delete window[callbackName];
-      script.remove();
-    };
-
-    const script = document.createElement("script");
-    script.src = URL_SCRIPT
-      + "?accion=guardarAsistencia"
-      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
-      + "&callback=" + callbackName;
-
-    document.body.appendChild(script);
-  }
-
-  function volverAlPanel() {
-    document.getElementById("moduloAsistencia").classList.add("oculto");
-    document.getElementById("panel").classList.remove("oculto");
-  }
-
-  function cerrarSesion() {
-    usuarioActual = null;
-    estudiantesActuales = [];
-
-    document.getElementById("cedula").value = "";
-    document.getElementById("password").value = "";
-    document.getElementById("mensajeLogin").textContent = "";
-
-    document.getElementById("panel").classList.add("oculto");
-    document.getElementById("moduloAsistencia").classList.add("oculto");
-    document.getElementById("login").classList.remove("oculto");
-  }
+  ...
 </script>
 
 </body>
