@@ -42,7 +42,7 @@
       font-weight: bold;
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 12px;
       margin-top: 6px;
@@ -50,9 +50,17 @@
       border-radius: 8px;
       font-size: 16px;
       box-sizing: border-box;
+      font-family: Arial, sans-serif;
     }
 
-    select:disabled {
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    select:disabled,
+    input:disabled,
+    textarea:disabled {
       background: #e5e7eb;
       cursor: not-allowed;
     }
@@ -221,11 +229,69 @@
       color: #0f4c81;
     }
 
+    .bloque-formulario {
+      background: #f8fafc;
+      border: 1px solid #dbe3ef;
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 20px;
+    }
+
+    .fila-matriz {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) repeat(3, 150px);
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+
+    .fila-matriz.encabezado {
+      font-weight: bold;
+      background: #e8f1fb;
+      padding: 12px;
+      border-radius: 8px;
+      border-bottom: none;
+      margin-top: 10px;
+    }
+
+    .fila-matriz label {
+      margin-top: 0;
+      font-weight: normal;
+    }
+
+    .fila-matriz input {
+      width: auto;
+      margin: 0 6px 0 0;
+    }
+
+    .texto-item {
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .nota {
+      font-size: 14px;
+      color: #475569;
+      margin-top: 8px;
+    }
+
     footer {
       text-align: center;
       margin: 30px;
       color: #64748b;
       font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .fila-matriz,
+      .fila-matriz.encabezado {
+        grid-template-columns: 1fr;
+      }
+
+      .fila-matriz.encabezado {
+        display: none;
+      }
     }
 
     @media (max-width: 700px) {
@@ -297,7 +363,7 @@
 
       <div class="modulo" onclick="abrirModulo('acompanamientos')">
         <h3>Acompañamientos</h3>
-        <p>Registrar acompañamientos realizados a docentes o facilitadores.</p>
+        <p>Registrar acompañamientos realizados a coordinadores o facilitadores.</p>
       </div>
 
       <div class="modulo" onclick="abrirModulo('incidencias')">
@@ -383,6 +449,54 @@
     <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
   </section>
 
+  <section id="moduloAcompanamientos" class="tarjeta oculto">
+    <h2>Módulo de acompañamientos</h2>
+
+    <div class="datos-usuario" id="datosUsuarioAcompanamientos"></div>
+
+    <div id="bloqueAcompanamientoPermitido">
+      <label for="tipoAcompanamiento">Tipo de acompañamiento</label>
+      <select id="tipoAcompanamiento" onchange="cambiarTipoAcompanamiento()">
+        <option value="">Seleccione el tipo de acompañamiento</option>
+        <option value="Coordinador">Acompañamiento al coordinador de sede</option>
+        <option value="Facilitador">Acompañamiento al facilitador</option>
+      </select>
+
+      <label for="fechaAcompanamiento">Fecha del acompañamiento</label>
+      <input type="date" id="fechaAcompanamiento">
+
+      <label for="sedeAcompanamiento">Centro sede</label>
+      <select id="sedeAcompanamiento" onchange="seleccionarSedeAcompanamiento()">
+        <option value="">Seleccione una sede</option>
+      </select>
+
+      <div id="datosSedeAcompanamiento" class="datos-usuario oculto"></div>
+
+      <label for="personaAcompanada">Persona acompañada</label>
+      <select id="personaAcompanada" onchange="seleccionarPersonaAcompanada()">
+        <option value="">Seleccione la persona acompañada</option>
+      </select>
+
+      <div id="bloqueGrupoAcompanamiento">
+        <label for="grupoAcompanamiento">Grupo</label>
+        <select id="grupoAcompanamiento">
+          <option value="">Seleccione un grupo</option>
+          <option value="EXPLORADORES">EXPLORADORES</option>
+          <option value="CREADORES">CREADORES</option>
+          <option value="INNOVADORES">INNOVADORES</option>
+        </select>
+      </div>
+
+      <div id="instrumentoAcompanamiento"></div>
+
+      <button onclick="guardarAcompanamiento()" id="btnGuardarAcompanamiento" class="oculto">Guardar acompañamiento</button>
+    </div>
+
+    <div id="mensajeAcompanamiento" class="mensaje"></div>
+
+    <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
+  </section>
+
 </div>
 
 <footer>
@@ -390,10 +504,43 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyl_8Uqh2TCjKAwI-bYN0YekRB2ly0bVPYKMBIqXYPCs2wNjufHwRN5S63UTgn03A9AxQ/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxgDR5gengDWNlPhr9BwVQoy7Adh0Grp_gbwJSzYf1SuNYF1IUBjVJM5_oOcpR7PYwrXg/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
+  let sedesAcompanamiento = [];
+  let personasAcompanamiento = [];
+  let sedeSeleccionadaAcompanamiento = null;
+  let personaSeleccionadaAcompanamiento = null;
+
+  const itemsCoordinador = [
+    ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
+    ["item02", "Verifica que las aulas estén listas, ambientadas y equipadas con materiales adecuados."],
+    ["item03", "Supervisa que las actividades se desarrollen conforme a la Guía oficial del campamento."],
+    ["item04", "Garantiza la disponibilidad y uso adecuado de los cuadernillos de los estudiantes."],
+    ["item05", "Verifica que los docentes implementen estrategias de atención diferenciada."],
+    ["item06", "Acompaña a los docentes en la jornada y da seguimiento a casos de estudiantes con rezago o dificultades."],
+    ["item07", "Coordina la entrega oportuna de meriendas, materiales y recursos pedagógicos."],
+    ["item08", "Atiende de manera oportuna situaciones emergentes o necesidades particulares del grupo."],
+    ["item09", "Promueve un clima organizacional positivo basado en la colaboración y el enfoque en los aprendizajes."],
+    ["item10", "Se comunica con familias sobre el progreso, necesidades o asistencia de sus hijos/as."],
+    ["item11", "Consolida información diaria sobre asistencia, observaciones, producciones, fotos u otras evidencias para los informes."]
+  ];
+
+  const itemsFacilitador = [
+    ["item01", "Recibe puntualmente a los estudiantes y organiza el inicio del día con entusiasmo."],
+    ["item02", "Aplica las actividades de la jornada conforme a la Guía oficial del campamento."],
+    ["item03", "Utiliza el cuadernillo del estudiante como recurso principal del trabajo en aula."],
+    ["item04", "Emplea estrategias pedagógicas diferenciadas para atender los distintos niveles de desempeño."],
+    ["item05", "Brinda atención personalizada a los estudiantes con mayores dificultades o rezago."],
+    ["item06", "Mantiene la disciplina y un clima positivo que favorece la participación y el aprendizaje."],
+    ["item07", "Integra actividades lúdicas y recreativas alineadas a los objetivos del día."],
+    ["item08", "Hace uso efectivo del tiempo y de los recursos disponibles en el salón."],
+    ["item09", "Coordina con el compañero y el coordinador para mejorar la atención del grupo."],
+    ["item10", "Registra diariamente la asistencia y las observaciones sobre el progreso individual."],
+    ["item11", "Conserva evidencias del proceso: productos en cuadernillos, notas, fotos u observaciones escritas."],
+    ["item12", "Durante el desarrollo de la actividad, el facilitador demuestra un abordaje favorable para el logro del propósito de la misma."]
+  ];
 
   window.onload = function() {
     const usuarioGuardado = localStorage.getItem("usuarioCampamento");
@@ -415,6 +562,10 @@
 
   function esFacilitador() {
     return normalizarTexto(usuarioActual && usuarioActual.rol) === "Facilitador";
+  }
+
+  function esCoordinadorSede() {
+    return normalizarTexto(usuarioActual && usuarioActual.rol) === "Coordinador sede";
   }
 
   function iniciarSesion() {
@@ -476,6 +627,7 @@
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
     document.getElementById("cambioPassword").classList.remove("oculto");
 
     document.getElementById("nuevaPassword").value = "";
@@ -579,6 +731,11 @@
       return;
     }
 
+    if (modulo === "acompanamientos") {
+      abrirModuloAcompanamientos();
+      return;
+    }
+
     if (modulo === "evaluaciones") {
       window.open("https://aminier06.github.io/evaluacioncampamento/", "_blank");
       return;
@@ -596,6 +753,7 @@
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.remove("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
 
     document.getElementById("datosUsuarioAsistencia").innerHTML = `
       <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
@@ -643,6 +801,7 @@
 
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.remove("oculto");
 
     document.getElementById("datosUsuarioDashboard").innerHTML = `
@@ -675,6 +834,464 @@
     document.getElementById("tablaDashboardAusencias").innerHTML = "";
 
     cargarDashboardAsistencia();
+  }
+
+  function abrirModuloAcompanamientos() {
+    if (!usuarioActual) {
+      alert("Debe iniciar sesión.");
+      return;
+    }
+
+    document.getElementById("panel").classList.add("oculto");
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.remove("oculto");
+
+    document.getElementById("datosUsuarioAcompanamientos").innerHTML = `
+      <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
+      <strong>Rol:</strong> ${usuarioActual.rol || ""}<br>
+      <strong>Regional:</strong> ${usuarioActual.regional || ""}<br>
+      <strong>Distrito:</strong> ${usuarioActual.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${usuarioActual.centroSede || ""}<br>
+      <strong>Grupo:</strong> ${usuarioActual.grupo || ""}
+    `;
+
+    document.getElementById("mensajeAcompanamiento").textContent = "";
+    document.getElementById("mensajeAcompanamiento").className = "mensaje";
+    document.getElementById("tipoAcompanamiento").value = "";
+    document.getElementById("fechaAcompanamiento").value = new Date().toISOString().split("T")[0];
+    document.getElementById("sedeAcompanamiento").innerHTML = '<option value="">Seleccione una sede</option>';
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("grupoAcompanamiento").value = "";
+    document.getElementById("datosSedeAcompanamiento").classList.add("oculto");
+    document.getElementById("datosSedeAcompanamiento").innerHTML = "";
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+    document.getElementById("bloqueGrupoAcompanamiento").classList.add("oculto");
+
+    sedesAcompanamiento = [];
+    personasAcompanamiento = [];
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+
+    if (esFacilitador()) {
+      document.getElementById("bloqueAcompanamientoPermitido").classList.add("oculto");
+      document.getElementById("mensajeAcompanamiento").textContent = "Su rol no tiene permiso para registrar acompañamientos.";
+      document.getElementById("mensajeAcompanamiento").classList.add("error");
+      return;
+    }
+
+    document.getElementById("bloqueAcompanamientoPermitido").classList.remove("oculto");
+
+    if (esCoordinadorSede()) {
+      document.getElementById("tipoAcompanamiento").innerHTML = `
+        <option value="Facilitador">Acompañamiento al facilitador</option>
+      `;
+      document.getElementById("tipoAcompanamiento").value = "Facilitador";
+      document.getElementById("tipoAcompanamiento").disabled = true;
+    } else {
+      document.getElementById("tipoAcompanamiento").disabled = false;
+      document.getElementById("tipoAcompanamiento").innerHTML = `
+        <option value="">Seleccione el tipo de acompañamiento</option>
+        <option value="Coordinador">Acompañamiento al coordinador de sede</option>
+        <option value="Facilitador">Acompañamiento al facilitador</option>
+      `;
+    }
+
+    cargarSedesPermitidas();
+  }
+
+  function cargarSedesPermitidas() {
+    const mensaje = document.getElementById("mensajeAcompanamiento");
+    mensaje.textContent = "Cargando sedes permitidas...";
+    mensaje.className = "mensaje";
+
+    const callbackName = "callbackSedes_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        sedesAcompanamiento = respuesta.sedes || [];
+        llenarSelectorSedes(sedesAcompanamiento);
+
+        mensaje.textContent = "Sedes cargadas correctamente.";
+        mensaje.classList.add("ok");
+
+        if (sedesAcompanamiento.length === 1) {
+          document.getElementById("sedeAcompanamiento").value = sedesAcompanamiento[0].centroSede;
+          seleccionarSedeAcompanamiento();
+        }
+
+        if (esCoordinadorSede()) {
+          cambiarTipoAcompanamiento();
+        }
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar las sedes.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=sedesPermitidas"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function llenarSelectorSedes(sedes) {
+    const select = document.getElementById("sedeAcompanamiento");
+    select.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedes.forEach(function(sede) {
+      const option = document.createElement("option");
+      option.value = sede.centroSede;
+      option.textContent = `${sede.regional} | ${sede.distrito} | ${sede.centroSede}`;
+      select.appendChild(option);
+    });
+  }
+
+  function seleccionarSedeAcompanamiento() {
+    const centro = document.getElementById("sedeAcompanamiento").value;
+    sedeSeleccionadaAcompanamiento = sedesAcompanamiento.find(function(s) {
+      return normalizarTexto(s.centroSede) === normalizarTexto(centro);
+    }) || null;
+
+    personaSeleccionadaAcompanamiento = null;
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    if (!sedeSeleccionadaAcompanamiento) {
+      document.getElementById("datosSedeAcompanamiento").classList.add("oculto");
+      document.getElementById("datosSedeAcompanamiento").innerHTML = "";
+      return;
+    }
+
+    document.getElementById("datosSedeAcompanamiento").classList.remove("oculto");
+    document.getElementById("datosSedeAcompanamiento").innerHTML = `
+      <strong>Regional:</strong> ${sedeSeleccionadaAcompanamiento.regional || ""}<br>
+      <strong>Distrito:</strong> ${sedeSeleccionadaAcompanamiento.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${sedeSeleccionadaAcompanamiento.centroSede || ""}<br>
+      <strong>Código sede:</strong> ${sedeSeleccionadaAcompanamiento.codigoSede || ""}<br>
+      <strong>Coordinador registrado:</strong> ${sedeSeleccionadaAcompanamiento.coordinador || ""}<br>
+      <strong>Teléfono:</strong> ${sedeSeleccionadaAcompanamiento.telefono || ""}
+    `;
+
+    cargarPersonasPermitidas();
+  }
+
+  function cambiarTipoAcompanamiento() {
+    const tipo = document.getElementById("tipoAcompanamiento").value;
+
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+    document.getElementById("grupoAcompanamiento").value = "";
+    personaSeleccionadaAcompanamiento = null;
+
+    if (tipo === "Facilitador") {
+      document.getElementById("bloqueGrupoAcompanamiento").classList.remove("oculto");
+    } else {
+      document.getElementById("bloqueGrupoAcompanamiento").classList.add("oculto");
+    }
+
+    cargarPersonasPermitidas();
+  }
+
+  function cargarPersonasPermitidas() {
+    const tipo = document.getElementById("tipoAcompanamiento").value;
+    const centro = document.getElementById("sedeAcompanamiento").value;
+    const mensaje = document.getElementById("mensajeAcompanamiento");
+
+    personasAcompanamiento = [];
+    personaSeleccionadaAcompanamiento = null;
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    if (!tipo || !centro) return;
+
+    mensaje.textContent = "Cargando personal permitido...";
+    mensaje.className = "mensaje";
+
+    const callbackName = "callbackPersonas_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        personasAcompanamiento = respuesta.personas || [];
+        llenarSelectorPersonas(personasAcompanamiento);
+
+        mensaje.textContent = "Personal cargado correctamente.";
+        mensaje.classList.add("ok");
+
+        if (personasAcompanamiento.length === 1) {
+          document.getElementById("personaAcompanada").value = personasAcompanamiento[0].cedula;
+          seleccionarPersonaAcompanada();
+        }
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo cargar el personal.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=personasPermitidas"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&centroSede=" + encodeURIComponent(centro)
+      + "&tipo=" + encodeURIComponent(tipo)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function llenarSelectorPersonas(personas) {
+    const select = document.getElementById("personaAcompanada");
+    select.innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+
+    personas.forEach(function(persona) {
+      const option = document.createElement("option");
+      option.value = persona.cedula;
+      option.textContent = persona.grupo
+        ? `${persona.nombre} | ${persona.rol} | ${persona.grupo}`
+        : `${persona.nombre} | ${persona.rol}`;
+      select.appendChild(option);
+    });
+  }
+
+  function seleccionarPersonaAcompanada() {
+    const cedula = document.getElementById("personaAcompanada").value;
+    const tipo = document.getElementById("tipoAcompanamiento").value;
+
+    personaSeleccionadaAcompanamiento = personasAcompanamiento.find(function(p) {
+      return normalizarTexto(p.cedula) === normalizarTexto(cedula);
+    }) || null;
+
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    if (!personaSeleccionadaAcompanamiento) return;
+
+    if (tipo === "Facilitador") {
+      document.getElementById("grupoAcompanamiento").value = personaSeleccionadaAcompanamiento.grupo || "";
+      construirInstrumentoFacilitador();
+    }
+
+    if (tipo === "Coordinador") {
+      construirInstrumentoCoordinador();
+    }
+
+    document.getElementById("btnGuardarAcompanamiento").classList.remove("oculto");
+  }
+
+  function construirMatrizItems(items) {
+    let html = `
+      <div class="fila-matriz encabezado">
+        <div>Aspecto observado</div>
+        <div>Cumple</div>
+        <div>Cumple parcialmente</div>
+        <div>No cumple</div>
+      </div>
+    `;
+
+    items.forEach(function(item) {
+      const nombre = item[0];
+      const texto = item[1];
+
+      html += `
+        <div class="fila-matriz">
+          <div class="texto-item">${texto}</div>
+          <label><input type="radio" name="${nombre}" value="Cumple"> Cumple</label>
+          <label><input type="radio" name="${nombre}" value="Cumple parcialmente"> Cumple parcialmente</label>
+          <label><input type="radio" name="${nombre}" value="No cumple"> No cumple</label>
+        </div>
+      `;
+    });
+
+    return html;
+  }
+
+  function construirInstrumentoCoordinador() {
+    document.getElementById("instrumentoAcompanamiento").innerHTML = `
+      <div class="bloque-formulario">
+        <h3>Instrumento de acompañamiento al coordinador de sede</h3>
+        <p class="nota">Marque una valoración por cada aspecto observado.</p>
+
+        ${construirMatrizItems(itemsCoordinador)}
+
+        <label for="oportunidadesMejoraAcomp">Oportunidades de mejora identificadas</label>
+        <textarea id="oportunidadesMejoraAcomp"></textarea>
+
+        <label for="acuerdosAcomp">Acuerdos establecidos a partir del acompañamiento</label>
+        <textarea id="acuerdosAcomp"></textarea>
+
+        <label for="observacionesGeneralesAcomp">Observaciones generales</label>
+        <textarea id="observacionesGeneralesAcomp"></textarea>
+
+        <label for="requiereSeguimientoAcomp">¿Requiere seguimiento?</label>
+        <select id="requiereSeguimientoAcomp">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+
+        <label for="estadoSeguimientoAcomp">Estado del seguimiento</label>
+        <select id="estadoSeguimientoAcomp">
+          <option value="">Seleccione</option>
+          <option value="Abierto">Abierto</option>
+          <option value="En seguimiento">En seguimiento</option>
+          <option value="Cerrado">Cerrado</option>
+        </select>
+      </div>
+    `;
+  }
+
+  function construirInstrumentoFacilitador() {
+    document.getElementById("instrumentoAcompanamiento").innerHTML = `
+      <div class="bloque-formulario">
+        <h3>Instrumento de acompañamiento al facilitador</h3>
+        <p class="nota">Marque una valoración por cada aspecto observado.</p>
+
+        ${construirMatrizItems(itemsFacilitador)}
+
+        <label for="oportunidadesMejoraAcomp">Oportunidades de mejora identificadas</label>
+        <textarea id="oportunidadesMejoraAcomp"></textarea>
+
+        <label for="acuerdosAcomp">Acuerdos establecidos a partir del acompañamiento</label>
+        <textarea id="acuerdosAcomp"></textarea>
+
+        <label for="observacionesGeneralesAcomp">Observaciones generales</label>
+        <textarea id="observacionesGeneralesAcomp"></textarea>
+
+        <label for="requiereSeguimientoAcomp">¿Requiere seguimiento?</label>
+        <select id="requiereSeguimientoAcomp">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+
+        <label for="estadoSeguimientoAcomp">Estado del seguimiento</label>
+        <select id="estadoSeguimientoAcomp">
+          <option value="">Seleccione</option>
+          <option value="Abierto">Abierto</option>
+          <option value="En seguimiento">En seguimiento</option>
+          <option value="Cerrado">Cerrado</option>
+        </select>
+      </div>
+    `;
+  }
+
+  function obtenerValorRadio(nombre) {
+    const seleccionado = document.querySelector(`input[name="${nombre}"]:checked`);
+    return seleccionado ? seleccionado.value : "";
+  }
+
+  function validarItemsAcompanamiento(items) {
+    for (let i = 0; i < items.length; i++) {
+      if (!obtenerValorRadio(items[i][0])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function guardarAcompanamiento() {
+    const tipo = document.getElementById("tipoAcompanamiento").value;
+    const fecha = document.getElementById("fechaAcompanamiento").value;
+    const centro = document.getElementById("sedeAcompanamiento").value;
+    const mensaje = document.getElementById("mensajeAcompanamiento");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!tipo || !fecha || !centro || !personaSeleccionadaAcompanamiento) {
+      mensaje.textContent = "Debe completar tipo de acompañamiento, fecha, sede y persona acompañada.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const items = tipo === "Coordinador" ? itemsCoordinador : itemsFacilitador;
+
+    if (!validarItemsAcompanamiento(items)) {
+      mensaje.textContent = "Debe valorar todos los aspectos del instrumento.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const payload = {
+      cedulaUsuario: usuarioActual.cedula,
+      fechaAcompanamiento: fecha,
+      centroSede: centro,
+      oportunidadesMejora: document.getElementById("oportunidadesMejoraAcomp").value.trim(),
+      acuerdos: document.getElementById("acuerdosAcomp").value.trim(),
+      observacionesGenerales: document.getElementById("observacionesGeneralesAcomp").value.trim(),
+      requiereSeguimiento: document.getElementById("requiereSeguimientoAcomp").value,
+      estadoSeguimiento: document.getElementById("estadoSeguimientoAcomp").value
+    };
+
+    items.forEach(function(item) {
+      payload[item[0]] = obtenerValorRadio(item[0]);
+    });
+
+    let accion = "";
+
+    if (tipo === "Coordinador") {
+      payload.nombreCoordinador = personaSeleccionadaAcompanamiento.nombre || "";
+      payload.cedulaCoordinador = personaSeleccionadaAcompanamiento.cedula || "";
+      accion = "guardarAcompanamientoCoordinador";
+    }
+
+    if (tipo === "Facilitador") {
+      payload.nombreFacilitador = personaSeleccionadaAcompanamiento.nombre || "";
+      payload.cedulaFacilitador = personaSeleccionadaAcompanamiento.cedula || "";
+      payload.grupo = document.getElementById("grupoAcompanamiento").value || personaSeleccionadaAcompanamiento.grupo || "";
+      accion = "guardarAcompanamientoFacilitador";
+
+      if (!payload.grupo) {
+        mensaje.textContent = "Debe indicar el grupo del facilitador acompañado.";
+        mensaje.classList.add("error");
+        return;
+      }
+    }
+
+    mensaje.textContent = "Guardando acompañamiento...";
+
+    const callbackName = "callbackGuardarAcomp_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mensaje.textContent = respuesta.mensaje + " Código: " + (respuesta.idAcompanamiento || "");
+        mensaje.classList.add("ok");
+        document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo guardar el acompañamiento.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=" + encodeURIComponent(accion)
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
   }
 
   function cargarDashboardAsistencia() {
@@ -1144,12 +1761,17 @@
   function volverAlPanel() {
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
     document.getElementById("panel").classList.remove("oculto");
   }
 
   function cerrarSesion() {
     usuarioActual = null;
     estudiantesActuales = [];
+    sedesAcompanamiento = [];
+    personasAcompanamiento = [];
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
 
     localStorage.removeItem("usuarioCampamento");
 
@@ -1163,6 +1785,7 @@
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
     document.getElementById("cambioPassword").classList.add("oculto");
     document.getElementById("login").classList.remove("oculto");
   }
