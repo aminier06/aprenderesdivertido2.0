@@ -413,6 +413,23 @@
     <label for="fechaAsistencia">Fecha de asistencia</label>
     <input type="date" id="fechaAsistencia" onchange="cargarEstudiantes()">
 
+    <label for="regionalAsistencia">Regional</label>
+    <select id="regionalAsistencia" onchange="cargarDistritosAsistencia()">
+      <option value="">Seleccione la regional</option>
+    </select>
+
+    <label for="distritoAsistencia">Distrito</label>
+    <select id="distritoAsistencia" onchange="cargarSedesAsistencia()">
+      <option value="">Seleccione el distrito</option>
+    </select>
+
+    <label for="sedeAsistencia">Centro sede</label>
+    <select id="sedeAsistencia" onchange="seleccionarSedeAsistencia()">
+      <option value="">Seleccione una sede</option>
+    </select>
+
+    <div id="datosSedeAsistencia" class="datos-usuario oculto"></div>
+
     <label for="grupoAsistencia">Grupo</label>
     <select id="grupoAsistencia" onchange="cargarEstudiantes()">
       <option value="">Seleccione un grupo</option>
@@ -538,6 +555,8 @@
 
   let usuarioActual = null;
   let estudiantesActuales = [];
+  let sedesAsistencia = [];
+  let sedeSeleccionadaAsistencia = null;
   let sedesAcompanamiento = [];
   let personasAcompanamiento = [];
   let sedeSeleccionadaAcompanamiento = null;
@@ -797,6 +816,12 @@
     const hoy = new Date().toISOString().split("T")[0];
     document.getElementById("fechaAsistencia").value = hoy;
 
+    document.getElementById("regionalAsistencia").innerHTML = '<option value="">Seleccione la regional</option>';
+    document.getElementById("distritoAsistencia").innerHTML = '<option value="">Seleccione el distrito</option>';
+    document.getElementById("sedeAsistencia").innerHTML = '<option value="">Seleccione una sede</option>';
+    document.getElementById("datosSedeAsistencia").classList.add("oculto");
+    document.getElementById("datosSedeAsistencia").innerHTML = "";
+
     document.getElementById("grupoAsistencia").disabled = false;
     document.getElementById("grupoAsistencia").value = "";
     document.getElementById("mensajeAsistencia").textContent = "";
@@ -808,19 +833,193 @@
     document.getElementById("btnGuardarAsistencia").disabled = false;
 
     estudiantesActuales = [];
+    sedesAsistencia = [];
+    sedeSeleccionadaAsistencia = null;
 
-    if (esFacilitador()) {
-      const grupoUsuario = normalizarTexto(usuarioActual.grupo);
+    cargarSedesPermitidasAsistencia();
+  }
 
-      if (grupoUsuario) {
-        document.getElementById("grupoAsistencia").value = grupoUsuario;
-        document.getElementById("grupoAsistencia").disabled = true;
-        cargarEstudiantes();
+  function cargarSedesPermitidasAsistencia() {
+    const mensaje = document.getElementById("mensajeAsistencia");
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
+    mensaje.className = "mensaje";
+
+    const callbackName = "callbackSedesAsistencia_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        sedesAsistencia = respuesta.sedes || [];
+        llenarSelectorRegionalesAsistencia(sedesAsistencia);
+
+        if (sedesAsistencia.length === 0) {
+          mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
+          mensaje.classList.add("error");
+        } else {
+          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
+          mensaje.classList.add("ok");
+        }
+
+        if (esFacilitador()) {
+          const grupoUsuario = normalizarTexto(usuarioActual.grupo);
+          if (grupoUsuario) {
+            document.getElementById("grupoAsistencia").value = grupoUsuario;
+            document.getElementById("grupoAsistencia").disabled = true;
+            cargarEstudiantes();
+          } else {
+            mensaje.textContent = "Este facilitador no tiene grupo asignado en la hoja USUARIOS.";
+            mensaje.className = "mensaje error";
+          }
+        }
       } else {
-        document.getElementById("mensajeAsistencia").textContent = "Este facilitador no tiene grupo asignado en la hoja USUARIOS.";
-        document.getElementById("mensajeAsistencia").classList.add("error");
+        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar las sedes.";
+        mensaje.classList.add("error");
       }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=sedesPermitidas"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function llenarSelectorRegionalesAsistencia(sedes) {
+    const selectRegional = document.getElementById("regionalAsistencia");
+    const selectDistrito = document.getElementById("distritoAsistencia");
+    const selectSede = document.getElementById("sedeAsistencia");
+
+    selectRegional.innerHTML = '<option value="">Seleccione la regional</option>';
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaAsistencia = null;
+    document.getElementById("datosSedeAsistencia").classList.add("oculto");
+    document.getElementById("datosSedeAsistencia").innerHTML = "";
+
+    const regionales = obtenerValoresUnicos(sedes, "regional");
+
+    regionales.forEach(function(regional) {
+      const option = document.createElement("option");
+      option.value = regional;
+      option.textContent = regional;
+      selectRegional.appendChild(option);
+    });
+
+    if (regionales.length === 1) {
+      selectRegional.value = regionales[0];
+      cargarDistritosAsistencia();
     }
+  }
+
+  function cargarDistritosAsistencia() {
+    const regionalSeleccionada = document.getElementById("regionalAsistencia").value;
+    const selectDistrito = document.getElementById("distritoAsistencia");
+    const selectSede = document.getElementById("sedeAsistencia");
+
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaAsistencia = null;
+    document.getElementById("datosSedeAsistencia").classList.add("oculto");
+    document.getElementById("datosSedeAsistencia").innerHTML = "";
+    document.getElementById("listaEstudiantes").innerHTML = "";
+    document.getElementById("tablaAsistenciaGrupo").innerHTML = "";
+    document.getElementById("consultaAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+
+    if (!regionalSeleccionada) return;
+
+    const sedesFiltradas = sedesAsistencia.filter(function(sede) {
+      return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada);
+    });
+
+    const distritos = obtenerValoresUnicos(sedesFiltradas, "distrito");
+
+    distritos.forEach(function(distrito) {
+      const option = document.createElement("option");
+      option.value = distrito;
+      option.textContent = distrito;
+      selectDistrito.appendChild(option);
+    });
+
+    if (distritos.length === 1) {
+      selectDistrito.value = distritos[0];
+      cargarSedesAsistencia();
+    }
+  }
+
+  function cargarSedesAsistencia() {
+    const regionalSeleccionada = document.getElementById("regionalAsistencia").value;
+    const distritoSeleccionado = document.getElementById("distritoAsistencia").value;
+    const selectSede = document.getElementById("sedeAsistencia");
+
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaAsistencia = null;
+    document.getElementById("datosSedeAsistencia").classList.add("oculto");
+    document.getElementById("datosSedeAsistencia").innerHTML = "";
+    document.getElementById("listaEstudiantes").innerHTML = "";
+    document.getElementById("tablaAsistenciaGrupo").innerHTML = "";
+    document.getElementById("consultaAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+
+    if (!regionalSeleccionada || !distritoSeleccionado) return;
+
+    const sedesFiltradas = sedesAsistencia
+      .filter(function(sede) {
+        return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada) &&
+               normalizarTexto(sede.distrito) === normalizarTexto(distritoSeleccionado);
+      })
+      .sort(function(a, b) {
+        return normalizarTexto(a.centroSede).localeCompare(normalizarTexto(b.centroSede));
+      });
+
+    sedesFiltradas.forEach(function(sede) {
+      const option = document.createElement("option");
+      option.value = sede.centroSede;
+      option.textContent = sede.codigoSede
+        ? `${sede.codigoSede} - ${sede.centroSede}`
+        : sede.centroSede;
+      selectSede.appendChild(option);
+    });
+
+    if (sedesFiltradas.length === 1) {
+      selectSede.value = sedesFiltradas[0].centroSede;
+      seleccionarSedeAsistencia();
+    }
+  }
+
+  function seleccionarSedeAsistencia() {
+    const centro = document.getElementById("sedeAsistencia").value;
+    sedeSeleccionadaAsistencia = sedesAsistencia.find(function(s) {
+      return normalizarTexto(s.centroSede) === normalizarTexto(centro);
+    }) || null;
+
+    document.getElementById("listaEstudiantes").innerHTML = "";
+    document.getElementById("tablaAsistenciaGrupo").innerHTML = "";
+    document.getElementById("consultaAsistencia").classList.add("oculto");
+    document.getElementById("btnGuardarAsistencia").classList.add("oculto");
+
+    if (!sedeSeleccionadaAsistencia) {
+      document.getElementById("datosSedeAsistencia").classList.add("oculto");
+      document.getElementById("datosSedeAsistencia").innerHTML = "";
+      return;
+    }
+
+    document.getElementById("datosSedeAsistencia").classList.remove("oculto");
+    document.getElementById("datosSedeAsistencia").innerHTML = `
+      <strong>Regional:</strong> ${sedeSeleccionadaAsistencia.regional || ""}<br>
+      <strong>Distrito:</strong> ${sedeSeleccionadaAsistencia.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${sedeSeleccionadaAsistencia.centroSede || ""}<br>
+      <strong>Código sede:</strong> ${sedeSeleccionadaAsistencia.codigoSede || ""}<br>
+      <strong>Coordinador registrado:</strong> ${sedeSeleccionadaAsistencia.coordinador || ""}<br>
+      <strong>Teléfono:</strong> ${sedeSeleccionadaAsistencia.telefono || ""}
+    `;
+
+    cargarEstudiantes();
   }
 
   function abrirDashboardAsistencia() {
@@ -1583,6 +1782,9 @@
   function cargarEstudiantes() {
     const grupo = document.getElementById("grupoAsistencia").value;
     const fechaAsistencia = document.getElementById("fechaAsistencia").value;
+    const regionalSeleccionada = document.getElementById("regionalAsistencia").value;
+    const distritoSeleccionado = document.getElementById("distritoAsistencia").value;
+    const centroSeleccionado = document.getElementById("sedeAsistencia").value;
     const mensaje = document.getElementById("mensajeAsistencia");
     const lista = document.getElementById("listaEstudiantes");
 
@@ -1603,6 +1805,12 @@
 
     if (!fechaAsistencia) {
       mensaje.textContent = "Debe seleccionar la fecha de asistencia.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (!regionalSeleccionada || !distritoSeleccionado || !centroSeleccionado) {
+      mensaje.textContent = "Debe seleccionar regional, distrito y centro sede.";
       mensaje.classList.add("error");
       return;
     }
@@ -1654,6 +1862,9 @@
       + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
       + "&grupo=" + encodeURIComponent(grupo)
       + "&fechaAsistencia=" + encodeURIComponent(fechaAsistencia)
+      + "&regional=" + encodeURIComponent(regionalSeleccionada)
+      + "&distrito=" + encodeURIComponent(distritoSeleccionado)
+      + "&centroSede=" + encodeURIComponent(centroSeleccionado)
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -1707,6 +1918,9 @@
   function guardarAsistencia() {
     const fechaAsistencia = document.getElementById("fechaAsistencia").value;
     const grupo = document.getElementById("grupoAsistencia").value;
+    const regionalSeleccionada = document.getElementById("regionalAsistencia").value;
+    const distritoSeleccionado = document.getElementById("distritoAsistencia").value;
+    const centroSeleccionado = document.getElementById("sedeAsistencia").value;
     const mensaje = document.getElementById("mensajeAsistencia");
 
     mensaje.textContent = "";
@@ -1812,6 +2026,12 @@
       return;
     }
 
+    if (!regionalSeleccionada || !distritoSeleccionado || !centroSeleccionado) {
+      mensaje.textContent = "Debe seleccionar regional, distrito y centro sede para consultar la asistencia.";
+      mensaje.classList.add("error");
+      return;
+    }
+
     if (!grupo) {
       mensaje.textContent = "Debe seleccionar un grupo para consultar la asistencia.";
       mensaje.classList.add("error");
@@ -1853,6 +2073,9 @@
       + "?accion=consultarAsistencia"
       + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
       + "&grupo=" + encodeURIComponent(grupo)
+      + "&regional=" + encodeURIComponent(regionalSeleccionada)
+      + "&distrito=" + encodeURIComponent(distritoSeleccionado)
+      + "&centroSede=" + encodeURIComponent(centroSeleccionado)
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -1906,6 +2129,8 @@
   function cerrarSesion() {
     usuarioActual = null;
     estudiantesActuales = [];
+    sedesAsistencia = [];
+    sedeSeleccionadaAsistencia = null;
     sedesAcompanamiento = [];
     personasAcompanamiento = [];
     sedeSeleccionadaAcompanamiento = null;
