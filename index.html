@@ -278,7 +278,8 @@
     #datosUsuario,
     #datosUsuarioAsistencia,
     #datosUsuarioDashboard,
-    #datosUsuarioAcompanamientos {
+    #datosUsuarioAcompanamientos,
+    #datosUsuarioIncidencias {
       display: none !important;
     }
 
@@ -478,6 +479,82 @@
       margin-top: 8px;
     }
 
+
+    .encabezado-modulo {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .acciones-modulo {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(240px, 1fr));
+      gap: 0 18px;
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 0 18px;
+    }
+
+    .bloque-consulta {
+      margin-top: 24px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 18px;
+    }
+
+    .badge-estado,
+    .badge-gravedad {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .badge-estado {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .badge-gravedad.baja { background: #dcfce7; color: #166534; }
+    .badge-gravedad.media { background: #fef9c3; color: #854d0e; }
+    .badge-gravedad.alta { background: #ffedd5; color: #9a3412; }
+    .badge-gravedad.critica { background: #fee2e2; color: #991b1b; }
+
+    .acciones-tabla {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .acciones-tabla button {
+      margin-top: 0;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .acciones-tabla select {
+      min-width: 150px;
+      width: auto;
+      margin-top: 0;
+      padding: 8px;
+      font-size: 13px;
+    }
+
     footer {
       text-align: center;
       margin: 30px;
@@ -487,7 +564,9 @@
 
     @media (max-width: 900px) {
       .fila-matriz,
-      .fila-matriz.encabezado {
+      .fila-matriz.encabezado,
+      .form-grid-2,
+      .form-grid-3 {
         grid-template-columns: 1fr;
       }
 
@@ -781,6 +860,197 @@
     <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
   </section>
 
+
+  <section id="moduloIncidencias" class="tarjeta oculto">
+    <div class="encabezado-modulo">
+      <div>
+        <h2>Módulo de incidencias</h2>
+        <p class="nota">Registre, consulte y dé seguimiento a situaciones ocurridas durante el desarrollo del campamento.</p>
+      </div>
+      <div class="acciones-modulo">
+        <button onclick="mostrarFormularioIncidencia()">Nueva incidencia</button>
+        <button class="btn-secundario" onclick="consultarIncidencias()">Consultar incidencias</button>
+      </div>
+    </div>
+
+    <div class="datos-usuario" id="datosUsuarioIncidencias"></div>
+
+    <div id="bloqueFormularioIncidencia" class="bloque-formulario">
+      <h3>Registro de incidencia</h3>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="fechaIncidencia">Fecha de la incidencia</label>
+          <input type="date" id="fechaIncidencia">
+        </div>
+
+        <div>
+          <label for="regionalIncidencia">Regional</label>
+          <select id="regionalIncidencia" onchange="cargarDistritosIncidencia()">
+            <option value="">Seleccione la regional</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="distritoIncidencia">Distrito</label>
+          <select id="distritoIncidencia" onchange="cargarSedesIncidencia()">
+            <option value="">Seleccione el distrito</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div>
+          <label for="sedeIncidencia">Centro sede</label>
+          <select id="sedeIncidencia" onchange="seleccionarSedeIncidencia()">
+            <option value="">Seleccione una sede</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="grupoIncidencia">Grupo</label>
+          <select id="grupoIncidencia">
+            <option value="">No aplica / todos los grupos</option>
+            <option value="EXPLORADORES">EXPLORADORES</option>
+            <option value="CREADORES">CREADORES</option>
+            <option value="INNOVADORES">INNOVADORES</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="datosSedeIncidencia" class="datos-usuario oculto"></div>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="categoriaIncidencia">Categoría</label>
+          <select id="categoriaIncidencia">
+            <option value="">Seleccione la categoría</option>
+            <option value="Asistencia y puntualidad">Asistencia y puntualidad</option>
+            <option value="Personal">Personal</option>
+            <option value="Estudiantes">Estudiantes</option>
+            <option value="Familia o comunidad">Familia o comunidad</option>
+            <option value="Alimentación">Alimentación</option>
+            <option value="Materiales">Materiales</option>
+            <option value="Infraestructura">Infraestructura</option>
+            <option value="Seguridad">Seguridad</option>
+            <option value="Tecnología o plataforma">Tecnología o plataforma</option>
+            <option value="Otra">Otra</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="gravedadIncidencia">Nivel de gravedad</label>
+          <select id="gravedadIncidencia">
+            <option value="">Seleccione</option>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+            <option value="Crítica">Crítica</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="requiereSeguimientoIncidencia">¿Requiere seguimiento?</label>
+          <select id="requiereSeguimientoIncidencia" onchange="ajustarSeguimientoIncidencia()">
+            <option value="">Seleccione</option>
+            <option value="Sí">Sí</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="descripcionIncidencia">Descripción de la incidencia</label>
+      <textarea id="descripcionIncidencia" placeholder="Describa de forma clara qué ocurrió, dónde ocurrió y cómo afecta el desarrollo del campamento."></textarea>
+
+      <label for="personasInvolucradasIncidencia">Personas involucradas</label>
+      <textarea id="personasInvolucradasIncidencia" placeholder="Indique estudiantes, facilitadores, familias u otras personas involucradas, si aplica."></textarea>
+
+      <label for="accionInmediataIncidencia">Acción inmediata tomada</label>
+      <textarea id="accionInmediataIncidencia" placeholder="Describa qué acción se tomó en la sede para atender la situación."></textarea>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="responsableSeguimientoIncidencia">Responsable del seguimiento</label>
+          <input type="text" id="responsableSeguimientoIncidencia" placeholder="Nombre o instancia responsable">
+        </div>
+
+        <div>
+          <label for="estadoIncidencia">Estado</label>
+          <select id="estadoIncidencia">
+            <option value="Registrada">Registrada</option>
+            <option value="En seguimiento">En seguimiento</option>
+            <option value="Resuelta">Resuelta</option>
+            <option value="Escalada">Escalada</option>
+            <option value="Cerrada">Cerrada</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="evidenciaIncidencia">Evidencia</label>
+          <input type="url" id="evidenciaIncidencia" placeholder="Pegue enlace de evidencia, si aplica">
+        </div>
+      </div>
+
+      <label for="observacionesSeguimientoIncidencia">Observaciones de seguimiento</label>
+      <textarea id="observacionesSeguimientoIncidencia" placeholder="Agregue observaciones de seguimiento o cierre, si aplica."></textarea>
+
+      <button onclick="guardarIncidencia()" id="btnGuardarIncidencia">Guardar incidencia</button>
+    </div>
+
+    <div id="mensajeIncidencia" class="mensaje"></div>
+
+    <div class="bloque-consulta">
+      <h3>Consulta de incidencias</h3>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="filtroEstadoIncidencia">Estado</label>
+          <select id="filtroEstadoIncidencia">
+            <option value="">Todos</option>
+            <option value="Registrada">Registrada</option>
+            <option value="En seguimiento">En seguimiento</option>
+            <option value="Resuelta">Resuelta</option>
+            <option value="Escalada">Escalada</option>
+            <option value="Cerrada">Cerrada</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroGravedadIncidencia">Gravedad</label>
+          <select id="filtroGravedadIncidencia">
+            <option value="">Todas</option>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+            <option value="Crítica">Crítica</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="filtroCategoriaIncidencia">Categoría</label>
+          <select id="filtroCategoriaIncidencia">
+            <option value="">Todas</option>
+            <option value="Asistencia y puntualidad">Asistencia y puntualidad</option>
+            <option value="Personal">Personal</option>
+            <option value="Estudiantes">Estudiantes</option>
+            <option value="Familia o comunidad">Familia o comunidad</option>
+            <option value="Alimentación">Alimentación</option>
+            <option value="Materiales">Materiales</option>
+            <option value="Infraestructura">Infraestructura</option>
+            <option value="Seguridad">Seguridad</option>
+            <option value="Tecnología o plataforma">Tecnología o plataforma</option>
+            <option value="Otra">Otra</option>
+          </select>
+        </div>
+      </div>
+
+      <button onclick="consultarIncidencias()">Aplicar filtros</button>
+      <div id="tablaIncidencias" class="tabla-contenedor"></div>
+    </div>
+
+    <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
+  </section>
+
 </div>
 
 <footer>
@@ -798,6 +1068,8 @@
   let personasAcompanamiento = [];
   let sedeSeleccionadaAcompanamiento = null;
   let personaSeleccionadaAcompanamiento = null;
+  let sedesIncidencias = [];
+  let sedeSeleccionadaIncidencia = null;
 
   const itemsCoordinador = [
     ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
@@ -914,6 +1186,7 @@
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
     document.getElementById("cambioPassword").classList.remove("oculto");
 
     document.getElementById("nuevaPassword").value = "";
@@ -1031,6 +1304,11 @@
       return;
     }
 
+    if (modulo === "incidencias") {
+      abrirModuloIncidencias();
+      return;
+    }
+
     if (modulo === "evaluaciones") {
       window.open("https://aminier06.github.io/evaluacioncampamento/", "_blank");
       return;
@@ -1049,6 +1327,7 @@
     document.getElementById("moduloAsistencia").classList.remove("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
 
     document.getElementById("datosUsuarioAsistencia").innerHTML = `
       <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
@@ -1277,6 +1556,7 @@
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.remove("oculto");
 
     document.getElementById("datosUsuarioDashboard").innerHTML = `
@@ -1320,6 +1600,7 @@
     document.getElementById("panel").classList.add("oculto");
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.remove("oculto");
 
     document.getElementById("datosUsuarioAcompanamientos").innerHTML = `
@@ -1877,6 +2158,511 @@
     document.body.appendChild(script);
   }
 
+
+  function abrirModuloIncidencias() {
+    if (!usuarioActual) {
+      alert("Debe iniciar sesión.");
+      return;
+    }
+
+    document.getElementById("panel").classList.add("oculto");
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.remove("oculto");
+
+    document.getElementById("datosUsuarioIncidencias").innerHTML = `
+      <strong>Usuario:</strong> ${usuarioActual.nombre || ""}<br>
+      <strong>Rol:</strong> ${usuarioActual.rol || ""}<br>
+      <strong>Regional:</strong> ${usuarioActual.regional || ""}<br>
+      <strong>Distrito:</strong> ${usuarioActual.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${usuarioActual.centroSede || ""}<br>
+      <strong>Grupo:</strong> ${usuarioActual.grupo || ""}
+    `;
+
+    limpiarFormularioIncidencia();
+    document.getElementById("fechaIncidencia").value = new Date().toISOString().split("T")[0];
+    document.getElementById("mensajeIncidencia").textContent = "";
+    document.getElementById("mensajeIncidencia").className = "mensaje";
+    document.getElementById("tablaIncidencias").innerHTML = "";
+
+    sedesIncidencias = [];
+    sedeSeleccionadaIncidencia = null;
+
+    cargarSedesPermitidasIncidencias();
+  }
+
+  function mostrarFormularioIncidencia() {
+    document.getElementById("bloqueFormularioIncidencia").classList.remove("oculto");
+    limpiarFormularioIncidencia(false);
+    document.getElementById("fechaIncidencia").value = new Date().toISOString().split("T")[0];
+  }
+
+  function limpiarFormularioIncidencia(limpiarUbicacion) {
+    if (limpiarUbicacion !== false) {
+      document.getElementById("regionalIncidencia").innerHTML = '<option value="">Seleccione la regional</option>';
+      document.getElementById("distritoIncidencia").innerHTML = '<option value="">Seleccione el distrito</option>';
+      document.getElementById("sedeIncidencia").innerHTML = '<option value="">Seleccione una sede</option>';
+      document.getElementById("datosSedeIncidencia").classList.add("oculto");
+      document.getElementById("datosSedeIncidencia").innerHTML = "";
+    }
+
+    document.getElementById("grupoIncidencia").disabled = false;
+    document.getElementById("grupoIncidencia").value = "";
+    document.getElementById("categoriaIncidencia").value = "";
+    document.getElementById("gravedadIncidencia").value = "";
+    document.getElementById("descripcionIncidencia").value = "";
+    document.getElementById("personasInvolucradasIncidencia").value = "";
+    document.getElementById("accionInmediataIncidencia").value = "";
+    document.getElementById("requiereSeguimientoIncidencia").value = "";
+    document.getElementById("responsableSeguimientoIncidencia").value = "";
+    document.getElementById("estadoIncidencia").value = "Registrada";
+    document.getElementById("evidenciaIncidencia").value = "";
+    document.getElementById("observacionesSeguimientoIncidencia").value = "";
+
+    if (esFacilitador()) {
+      const grupoUsuario = normalizarTexto(usuarioActual.grupo);
+      document.getElementById("grupoIncidencia").value = grupoUsuario;
+      document.getElementById("grupoIncidencia").disabled = true;
+    }
+  }
+
+  function cargarSedesPermitidasIncidencias() {
+    const mensaje = document.getElementById("mensajeIncidencia");
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
+    mensaje.className = "mensaje";
+
+    const callbackName = "callbackSedesIncidencias_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        sedesIncidencias = respuesta.sedes || [];
+        llenarSelectorRegionalesIncidencia(sedesIncidencias);
+
+        if (sedesIncidencias.length === 0) {
+          mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
+          mensaje.classList.add("error");
+        } else {
+          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
+          mensaje.classList.add("ok");
+        }
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar las sedes.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=sedesPermitidas"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function llenarSelectorRegionalesIncidencia(sedes) {
+    const selectRegional = document.getElementById("regionalIncidencia");
+    const selectDistrito = document.getElementById("distritoIncidencia");
+    const selectSede = document.getElementById("sedeIncidencia");
+
+    selectRegional.innerHTML = '<option value="">Seleccione la regional</option>';
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaIncidencia = null;
+    document.getElementById("datosSedeIncidencia").classList.add("oculto");
+    document.getElementById("datosSedeIncidencia").innerHTML = "";
+
+    const regionales = obtenerValoresUnicos(sedes, "regional");
+
+    regionales.forEach(function(regional) {
+      const option = document.createElement("option");
+      option.value = regional;
+      option.textContent = regional;
+      selectRegional.appendChild(option);
+    });
+
+    if (regionales.length === 1) {
+      selectRegional.value = regionales[0];
+      cargarDistritosIncidencia();
+    }
+  }
+
+  function cargarDistritosIncidencia() {
+    const regionalSeleccionada = document.getElementById("regionalIncidencia").value;
+    const selectDistrito = document.getElementById("distritoIncidencia");
+    const selectSede = document.getElementById("sedeIncidencia");
+
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaIncidencia = null;
+    document.getElementById("datosSedeIncidencia").classList.add("oculto");
+    document.getElementById("datosSedeIncidencia").innerHTML = "";
+
+    if (!regionalSeleccionada) return;
+
+    const sedesFiltradas = sedesIncidencias.filter(function(sede) {
+      return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada);
+    });
+
+    const distritos = obtenerValoresUnicos(sedesFiltradas, "distrito");
+
+    distritos.forEach(function(distrito) {
+      const option = document.createElement("option");
+      option.value = distrito;
+      option.textContent = distrito;
+      selectDistrito.appendChild(option);
+    });
+
+    if (distritos.length === 1) {
+      selectDistrito.value = distritos[0];
+      cargarSedesIncidencia();
+    }
+  }
+
+  function cargarSedesIncidencia() {
+    const regionalSeleccionada = document.getElementById("regionalIncidencia").value;
+    const distritoSeleccionado = document.getElementById("distritoIncidencia").value;
+    const selectSede = document.getElementById("sedeIncidencia");
+
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaIncidencia = null;
+    document.getElementById("datosSedeIncidencia").classList.add("oculto");
+    document.getElementById("datosSedeIncidencia").innerHTML = "";
+
+    if (!regionalSeleccionada || !distritoSeleccionado) return;
+
+    const sedesFiltradas = sedesIncidencias
+      .filter(function(sede) {
+        return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada) &&
+               normalizarTexto(sede.distrito) === normalizarTexto(distritoSeleccionado);
+      })
+      .sort(function(a, b) {
+        return normalizarTexto(a.centroSede).localeCompare(normalizarTexto(b.centroSede));
+      });
+
+    sedesFiltradas.forEach(function(sede) {
+      const option = document.createElement("option");
+      option.value = sede.centroSede;
+      option.textContent = sede.codigoSede
+        ? `${sede.codigoSede} - ${sede.centroSede}`
+        : sede.centroSede;
+      selectSede.appendChild(option);
+    });
+
+    if (sedesFiltradas.length === 1) {
+      selectSede.value = sedesFiltradas[0].centroSede;
+      seleccionarSedeIncidencia();
+    }
+  }
+
+  function seleccionarSedeIncidencia() {
+    const centro = document.getElementById("sedeIncidencia").value;
+    sedeSeleccionadaIncidencia = sedesIncidencias.find(function(s) {
+      return normalizarTexto(s.centroSede) === normalizarTexto(centro);
+    }) || null;
+
+    if (!sedeSeleccionadaIncidencia) {
+      document.getElementById("datosSedeIncidencia").classList.add("oculto");
+      document.getElementById("datosSedeIncidencia").innerHTML = "";
+      return;
+    }
+
+    document.getElementById("datosSedeIncidencia").classList.remove("oculto");
+    document.getElementById("datosSedeIncidencia").innerHTML = `
+      <strong>Regional:</strong> ${sedeSeleccionadaIncidencia.regional || ""}<br>
+      <strong>Distrito:</strong> ${sedeSeleccionadaIncidencia.distrito || ""}<br>
+      <strong>Centro sede:</strong> ${sedeSeleccionadaIncidencia.centroSede || ""}<br>
+      <strong>Código sede:</strong> ${sedeSeleccionadaIncidencia.codigoSede || ""}<br>
+      <strong>Coordinador registrado:</strong> ${sedeSeleccionadaIncidencia.coordinador || ""}<br>
+      <strong>Teléfono:</strong> ${sedeSeleccionadaIncidencia.telefono || ""}
+    `;
+  }
+
+  function ajustarSeguimientoIncidencia() {
+    const requiere = document.getElementById("requiereSeguimientoIncidencia").value;
+    const estado = document.getElementById("estadoIncidencia");
+
+    if (requiere === "Sí" && estado.value === "Registrada") {
+      estado.value = "En seguimiento";
+    }
+
+    if (requiere === "No" && estado.value === "") {
+      estado.value = "Registrada";
+    }
+  }
+
+  function guardarIncidencia() {
+    const mensaje = document.getElementById("mensajeIncidencia");
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const fecha = document.getElementById("fechaIncidencia").value;
+    const regional = document.getElementById("regionalIncidencia").value;
+    const distrito = document.getElementById("distritoIncidencia").value;
+    const centro = document.getElementById("sedeIncidencia").value;
+    const grupo = document.getElementById("grupoIncidencia").value;
+    const categoria = document.getElementById("categoriaIncidencia").value;
+    const gravedad = document.getElementById("gravedadIncidencia").value;
+    const descripcion = document.getElementById("descripcionIncidencia").value.trim();
+    const accionInmediata = document.getElementById("accionInmediataIncidencia").value.trim();
+    const requiereSeguimiento = document.getElementById("requiereSeguimientoIncidencia").value;
+    const responsableSeguimiento = document.getElementById("responsableSeguimientoIncidencia").value.trim();
+    const estado = document.getElementById("estadoIncidencia").value;
+
+    if (!fecha || !regional || !distrito || !centro || !categoria || !gravedad || !descripcion || !requiereSeguimiento || !estado) {
+      mensaje.textContent = "Debe completar fecha, regional, distrito, sede, categoría, gravedad, descripción, seguimiento y estado.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (esFacilitador() && normalizarTexto(grupo) !== normalizarTexto(usuarioActual.grupo)) {
+      mensaje.textContent = "El facilitador solo puede registrar incidencias de su grupo asignado.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if ((gravedad === "Alta" || gravedad === "Crítica") && !accionInmediata) {
+      mensaje.textContent = "Para incidencias de gravedad alta o crítica debe indicar la acción inmediata tomada.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if (requiereSeguimiento === "Sí" && !responsableSeguimiento) {
+      mensaje.textContent = "Debe indicar el responsable del seguimiento.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    if ((estado === "Resuelta" || estado === "Cerrada") && !document.getElementById("observacionesSeguimientoIncidencia").value.trim()) {
+      mensaje.textContent = "Para marcar una incidencia como resuelta o cerrada debe agregar observaciones de seguimiento o cierre.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const payload = {
+      cedulaUsuario: usuarioActual.cedula,
+      nombreUsuario: usuarioActual.nombre || "",
+      rolUsuario: usuarioActual.rol || "",
+      regional: regional,
+      distrito: distrito,
+      centroSede: centro,
+      codigoSede: sedeSeleccionadaIncidencia ? (sedeSeleccionadaIncidencia.codigoSede || "") : "",
+      grupo: grupo,
+      fechaIncidencia: fecha,
+      categoria: categoria,
+      gravedad: gravedad,
+      descripcion: descripcion,
+      personasInvolucradas: document.getElementById("personasInvolucradasIncidencia").value.trim(),
+      accionInmediata: accionInmediata,
+      requiereSeguimiento: requiereSeguimiento,
+      responsableSeguimiento: responsableSeguimiento,
+      estado: estado,
+      evidencia: document.getElementById("evidenciaIncidencia").value.trim(),
+      observacionesSeguimiento: document.getElementById("observacionesSeguimientoIncidencia").value.trim()
+    };
+
+    mensaje.textContent = "Guardando incidencia...";
+
+    const callbackName = "callbackGuardarIncidencia_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mensaje.textContent = (respuesta.mensaje || "Incidencia guardada correctamente.") + " Código: " + (respuesta.idIncidencia || "");
+        mensaje.classList.add("ok");
+        limpiarFormularioIncidencia(false);
+        document.getElementById("fechaIncidencia").value = new Date().toISOString().split("T")[0];
+        consultarIncidencias();
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo guardar la incidencia.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=guardarIncidencia"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function consultarIncidencias() {
+    const mensaje = document.getElementById("mensajeIncidencia");
+    const tabla = document.getElementById("tablaIncidencias");
+
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    tabla.innerHTML = "";
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const payload = {
+      cedula: usuarioActual.cedula,
+      estado: document.getElementById("filtroEstadoIncidencia").value,
+      gravedad: document.getElementById("filtroGravedadIncidencia").value,
+      categoria: document.getElementById("filtroCategoriaIncidencia").value,
+      regional: document.getElementById("regionalIncidencia").value,
+      distrito: document.getElementById("distritoIncidencia").value,
+      centroSede: document.getElementById("sedeIncidencia").value,
+      grupo: document.getElementById("grupoIncidencia").value
+    };
+
+    mensaje.textContent = "Consultando incidencias...";
+
+    const callbackName = "callbackConsultarIncidencias_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mensaje.textContent = "Consulta cargada correctamente.";
+        mensaje.classList.add("ok");
+        construirTablaIncidencias(respuesta.incidencias || []);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudieron consultar las incidencias.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=consultarIncidencias"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function claseGravedad(gravedad) {
+    const valor = normalizarTexto(gravedad).toLowerCase();
+    if (valor === "crítica" || valor === "critica") return "critica";
+    if (valor === "alta") return "alta";
+    if (valor === "media") return "media";
+    return "baja";
+  }
+
+  function construirTablaIncidencias(datos) {
+    const contenedor = document.getElementById("tablaIncidencias");
+
+    if (!datos || datos.length === 0) {
+      contenedor.innerHTML = "<p>No hay incidencias registradas para los filtros seleccionados.</p>";
+      return;
+    }
+
+    let html = "<table>";
+    html += "<thead><tr>";
+    html += "<th>Código</th>";
+    html += "<th>Fecha</th>";
+    html += "<th>Centro sede</th>";
+    html += "<th>Grupo</th>";
+    html += "<th>Categoría</th>";
+    html += "<th>Gravedad</th>";
+    html += "<th>Estado</th>";
+    html += "<th>Descripción</th>";
+    html += "<th>Seguimiento</th>";
+    html += "</tr></thead><tbody>";
+
+    datos.forEach(function(incidencia, index) {
+      const id = incidencia.idIncidencia || incidencia.IdIncidencia || incidencia.codigo || incidencia.Codigo || "";
+      const gravedad = incidencia.gravedad || incidencia.Gravedad || "";
+      const estado = incidencia.estado || incidencia.Estado || "";
+      const descripcion = incidencia.descripcion || incidencia.Descripcion || "";
+
+      html += "<tr>";
+      html += `<td>${id}</td>`;
+      html += `<td>${incidencia.fechaIncidencia || incidencia.FechaIncidencia || incidencia.fecha || ""}</td>`;
+      html += `<td>${incidencia.centroSede || incidencia.CentroSede || ""}</td>`;
+      html += `<td>${incidencia.grupo || incidencia.Grupo || ""}</td>`;
+      html += `<td>${incidencia.categoria || incidencia.Categoria || ""}</td>`;
+      html += `<td><span class="badge-gravedad ${claseGravedad(gravedad)}">${gravedad}</span></td>`;
+      html += `<td><span class="badge-estado">${estado}</span></td>`;
+      html += `<td>${descripcion.length > 160 ? descripcion.substring(0, 160) + "..." : descripcion}</td>`;
+      html += `<td>
+        <div class="acciones-tabla">
+          <select id="estadoIncidenciaTabla_${index}">
+            <option value="Registrada" ${estado === "Registrada" ? "selected" : ""}>Registrada</option>
+            <option value="En seguimiento" ${estado === "En seguimiento" ? "selected" : ""}>En seguimiento</option>
+            <option value="Resuelta" ${estado === "Resuelta" ? "selected" : ""}>Resuelta</option>
+            <option value="Escalada" ${estado === "Escalada" ? "selected" : ""}>Escalada</option>
+            <option value="Cerrada" ${estado === "Cerrada" ? "selected" : ""}>Cerrada</option>
+          </select>
+          <button onclick="actualizarEstadoIncidencia('${String(id).replace(/'/g, "\\'")}', document.getElementById('estadoIncidenciaTabla_${index}').value)">Actualizar</button>
+        </div>
+      </td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    contenedor.innerHTML = html;
+  }
+
+  function actualizarEstadoIncidencia(idIncidencia, estado) {
+    const mensaje = document.getElementById("mensajeIncidencia");
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+
+    if (!idIncidencia) {
+      mensaje.textContent = "No se pudo identificar la incidencia seleccionada.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    const observaciones = prompt("Observaciones de seguimiento o cierre:") || "";
+
+    const payload = {
+      cedulaUsuario: usuarioActual.cedula,
+      idIncidencia: idIncidencia,
+      estado: estado,
+      observacionesSeguimiento: observaciones
+    };
+
+    mensaje.textContent = "Actualizando incidencia...";
+
+    const callbackName = "callbackActualizarIncidencia_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mensaje.textContent = respuesta.mensaje || "Incidencia actualizada correctamente.";
+        mensaje.classList.add("ok");
+        consultarIncidencias();
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo actualizar la incidencia.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=actualizarIncidencia"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
   function cargarDashboardAsistencia() {
     const grupo = document.getElementById("grupoDashboard").value;
     const fechaInicio = document.getElementById("fechaInicioDashboard").value;
@@ -2369,6 +3155,7 @@
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
     document.getElementById("panel").classList.remove("oculto");
   }
 
@@ -2381,6 +3168,8 @@
     personasAcompanamiento = [];
     sedeSeleccionadaAcompanamiento = null;
     personaSeleccionadaAcompanamiento = null;
+    sedesIncidencias = [];
+    sedeSeleccionadaIncidencia = null;
 
     localStorage.removeItem("usuarioCampamento");
     ocultarDatosUsuarioFlotante();
@@ -2396,6 +3185,7 @@
     document.getElementById("moduloAsistencia").classList.add("oculto");
     document.getElementById("moduloDashboard").classList.add("oculto");
     document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
     document.getElementById("cambioPassword").classList.add("oculto");
     document.getElementById("login").classList.remove("oculto");
   }
