@@ -6,11 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
+    html {
+      min-height: 100%;
+    }
+
     body {
       margin: 0;
+      min-height: 100vh;
       font-family: Arial, sans-serif;
       background: #f2f6fb;
       color: #1f2937;
+      position: relative;
+      z-index: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: url("logo_campamento.png");
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: min(72vw, 720px);
+      opacity: 0.09;
+      pointer-events: none;
+      z-index: -1;
     }
 
     header {
@@ -27,7 +47,7 @@
     }
 
     .tarjeta {
-      background: white;
+      background: rgba(255, 255, 255, 0.94);
       border-radius: 14px;
       padding: 25px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.08);
@@ -230,7 +250,7 @@
     }
 
     .bloque-formulario {
-      background: #f8fafc;
+      background: rgba(248, 250, 252, 0.92);
       border: 1px solid #dbe3ef;
       border-radius: 12px;
       padding: 18px;
@@ -464,6 +484,16 @@
 
       <label for="fechaAcompanamiento">Fecha del acompañamiento</label>
       <input type="date" id="fechaAcompanamiento">
+
+      <label for="regionalAcompanamiento">Regional</label>
+      <select id="regionalAcompanamiento" onchange="cargarDistritosAcompanamiento()">
+        <option value="">Seleccione la regional</option>
+      </select>
+
+      <label for="distritoAcompanamiento">Distrito</label>
+      <select id="distritoAcompanamiento" onchange="cargarSedesAcompanamiento()">
+        <option value="">Seleccione el distrito</option>
+      </select>
 
       <label for="sedeAcompanamiento">Centro sede</label>
       <select id="sedeAcompanamiento" onchange="seleccionarSedeAcompanamiento()">
@@ -860,6 +890,8 @@
     document.getElementById("mensajeAcompanamiento").className = "mensaje";
     document.getElementById("tipoAcompanamiento").value = "";
     document.getElementById("fechaAcompanamiento").value = new Date().toISOString().split("T")[0];
+    document.getElementById("regionalAcompanamiento").innerHTML = '<option value="">Seleccione la regional</option>';
+    document.getElementById("distritoAcompanamiento").innerHTML = '<option value="">Seleccione el distrito</option>';
     document.getElementById("sedeAcompanamiento").innerHTML = '<option value="">Seleccione una sede</option>';
     document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
     document.getElementById("grupoAcompanamiento").value = "";
@@ -903,7 +935,7 @@
 
   function cargarSedesPermitidas() {
     const mensaje = document.getElementById("mensajeAcompanamiento");
-    mensaje.textContent = "Cargando sedes permitidas...";
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
     mensaje.className = "mensaje";
 
     const callbackName = "callbackSedes_" + Date.now();
@@ -911,14 +943,14 @@
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
         sedesAcompanamiento = respuesta.sedes || [];
-        llenarSelectorSedes(sedesAcompanamiento);
+        llenarSelectorRegionalesAcompanamiento(sedesAcompanamiento);
 
-        mensaje.textContent = "Sedes cargadas correctamente.";
-        mensaje.classList.add("ok");
-
-        if (sedesAcompanamiento.length === 1) {
-          document.getElementById("sedeAcompanamiento").value = sedesAcompanamiento[0].centroSede;
-          seleccionarSedeAcompanamiento();
+        if (sedesAcompanamiento.length === 0) {
+          mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
+          mensaje.classList.add("error");
+        } else {
+          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
+          mensaje.classList.add("ok");
         }
 
         if (esCoordinadorSede()) {
@@ -942,16 +974,122 @@
     document.body.appendChild(script);
   }
 
-  function llenarSelectorSedes(sedes) {
-    const select = document.getElementById("sedeAcompanamiento");
-    select.innerHTML = '<option value="">Seleccione una sede</option>';
+  function obtenerValoresUnicos(lista, campo) {
+    return [...new Set(
+      lista
+        .map(function(item) { return normalizarTexto(item[campo]); })
+        .filter(function(valor) { return valor !== ""; })
+    )].sort(function(a, b) { return a.localeCompare(b); });
+  }
 
-    sedes.forEach(function(sede) {
+  function llenarSelectorRegionalesAcompanamiento(sedes) {
+    const selectRegional = document.getElementById("regionalAcompanamiento");
+    const selectDistrito = document.getElementById("distritoAcompanamiento");
+    const selectSede = document.getElementById("sedeAcompanamiento");
+
+    selectRegional.innerHTML = '<option value="">Seleccione la regional</option>';
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    const regionales = obtenerValoresUnicos(sedes, "regional");
+
+    regionales.forEach(function(regional) {
+      const option = document.createElement("option");
+      option.value = regional;
+      option.textContent = regional;
+      selectRegional.appendChild(option);
+    });
+
+    if (regionales.length === 1) {
+      selectRegional.value = regionales[0];
+      cargarDistritosAcompanamiento();
+    }
+  }
+
+  function cargarDistritosAcompanamiento() {
+    const regionalSeleccionada = document.getElementById("regionalAcompanamiento").value;
+    const selectDistrito = document.getElementById("distritoAcompanamiento");
+    const selectSede = document.getElementById("sedeAcompanamiento");
+
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+    personasAcompanamiento = [];
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("datosSedeAcompanamiento").classList.add("oculto");
+    document.getElementById("datosSedeAcompanamiento").innerHTML = "";
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    if (!regionalSeleccionada) return;
+
+    const sedesFiltradas = sedesAcompanamiento.filter(function(sede) {
+      return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada);
+    });
+
+    const distritos = obtenerValoresUnicos(sedesFiltradas, "distrito");
+
+    distritos.forEach(function(distrito) {
+      const option = document.createElement("option");
+      option.value = distrito;
+      option.textContent = distrito;
+      selectDistrito.appendChild(option);
+    });
+
+    if (distritos.length === 1) {
+      selectDistrito.value = distritos[0];
+      cargarSedesAcompanamiento();
+    }
+  }
+
+  function cargarSedesAcompanamiento() {
+    const regionalSeleccionada = document.getElementById("regionalAcompanamiento").value;
+    const distritoSeleccionado = document.getElementById("distritoAcompanamiento").value;
+    const selectSede = document.getElementById("sedeAcompanamiento");
+
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+    personasAcompanamiento = [];
+    document.getElementById("personaAcompanada").innerHTML = '<option value="">Seleccione la persona acompañada</option>';
+    document.getElementById("datosSedeAcompanamiento").classList.add("oculto");
+    document.getElementById("datosSedeAcompanamiento").innerHTML = "";
+    document.getElementById("instrumentoAcompanamiento").innerHTML = "";
+    document.getElementById("btnGuardarAcompanamiento").classList.add("oculto");
+
+    if (!regionalSeleccionada || !distritoSeleccionado) return;
+
+    const sedesFiltradas = sedesAcompanamiento
+      .filter(function(sede) {
+        return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada) &&
+               normalizarTexto(sede.distrito) === normalizarTexto(distritoSeleccionado);
+      })
+      .sort(function(a, b) {
+        return normalizarTexto(a.centroSede).localeCompare(normalizarTexto(b.centroSede));
+      });
+
+    sedesFiltradas.forEach(function(sede) {
       const option = document.createElement("option");
       option.value = sede.centroSede;
-      option.textContent = `${sede.regional} | ${sede.distrito} | ${sede.centroSede}`;
-      select.appendChild(option);
+      option.textContent = sede.codigoSede
+        ? `${sede.codigoSede} - ${sede.centroSede}`
+        : sede.centroSede;
+      selectSede.appendChild(option);
     });
+
+    if (sedesFiltradas.length === 1) {
+      selectSede.value = sedesFiltradas[0].centroSede;
+      seleccionarSedeAcompanamiento();
+    }
   }
 
   function seleccionarSedeAcompanamiento() {
