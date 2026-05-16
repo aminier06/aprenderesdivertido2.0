@@ -43,7 +43,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      min-height: 86px;
+      min-height: 100px;
       box-sizing: border-box;
       box-shadow: 0 4px 14px rgba(15, 76, 129, 0.22);
     }
@@ -63,51 +63,59 @@
 
     .texto-encabezado {
       text-align: center;
-      padding-left: 110px;
-      padding-right: 300px;
+      padding-left: 120px;
+      padding-right: 315px;
     }
 
     .texto-encabezado h1 {
       margin: 0;
-      font-size: 30px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 600;
       letter-spacing: 0.2px;
       line-height: 1.15;
+      opacity: 0.96;
     }
 
     .texto-encabezado p {
       margin: 6px 0 0;
-      font-size: 17px;
-      font-weight: 400;
-      opacity: 0.95;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      line-height: 1.08;
+      opacity: 1;
     }
 
     @media (max-width: 900px) {
       header {
         justify-content: flex-start;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
         padding: 14px 18px;
-        min-height: 78px;
+        min-height: auto;
       }
 
       .logo-minerd-header {
         position: static;
         transform: none;
         width: 64px;
-        margin-right: 14px;
+        margin-right: 0;
       }
 
       .texto-encabezado {
+        flex: 1;
+        min-width: 220px;
         text-align: left;
         padding-left: 0;
         padding-right: 0;
       }
 
       .texto-encabezado h1 {
-        font-size: 24px;
+        font-size: 16px;
       }
 
       .texto-encabezado p {
-        font-size: 14px;
+        font-size: 25px;
       }
     }
 
@@ -300,22 +308,22 @@
     }
 
     .usuario-flotante {
-      position: fixed;
-      top: 14px;
-      right: 22px;
-      z-index: 2000;
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
       background: rgba(255, 255, 255, 0.97);
       border: 1px solid rgba(203, 213, 225, 0.95);
       border-left: 5px solid #0f4c81;
       border-radius: 12px;
       padding: 10px 14px;
       min-width: 230px;
-      max-width: 320px;
-      box-shadow: 0 6px 18px rgba(15, 76, 129, 0.18);
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(15, 76, 129, 0.14);
       font-size: 14px;
       line-height: 1.45;
       text-align: left;
-      backdrop-filter: blur(4px);
     }
 
     .usuario-flotante .nombre-usuario {
@@ -333,15 +341,17 @@
       margin-top: 2px;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       .usuario-flotante {
-        position: fixed;
-        top: 8px;
-        right: 8px;
-        min-width: 170px;
-        max-width: 48vw;
-        padding: 8px 10px;
-        font-size: 12px;
+        position: static;
+        transform: none;
+        order: 3;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        margin-top: 6px;
+        box-sizing: border-box;
+        font-size: 13px;
       }
     }
 
@@ -728,9 +738,8 @@
     <h1>Dirección de Educación Primaria</h1>
     <p>Campamento Aprender es Divertido</p>
   </div>
+  <div id="usuarioFlotante" class="usuario-flotante oculto"></div>
 </header>
-
-<div id="usuarioFlotante" class="usuario-flotante oculto"></div>
 
 <div class="contenedor">
 
