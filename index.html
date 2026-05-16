@@ -1682,7 +1682,6 @@
   let graficosDashboard = {};
   let sedesIncidencias = [];
   let sedeSeleccionadaIncidencia = null;
-    datosAsignacionGrupos = null;
   let modoIncidenciaActual = "consulta";
   let datosAsignacionGrupos = null;
 
@@ -1738,7 +1737,8 @@
   }
 
   function esCoordinadorSede() {
-    return normalizarTexto(usuarioActual && usuarioActual.rol) === "Coordinador sede";
+    const rol = normalizarTexto(usuarioActual && usuarioActual.rol).toLowerCase();
+    return rol === "coordinador sede" || rol === "coordinador de sede";
   }
 
   function asegurarOpcionGrupo(select, grupo) {
