@@ -36,62 +36,78 @@
 
 
     header {
-      background: #0f4c81;
+      background: linear-gradient(90deg, #0f4c81 0%, #145a96 100%);
       color: white;
-      padding: 16px 20px;
+      padding: 14px 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 18px;
       position: relative;
-      text-align: center;
-      min-height: 92px;
+      min-height: 86px;
       box-sizing: border-box;
+      box-shadow: 0 4px 14px rgba(15, 76, 129, 0.22);
     }
 
     .logo-minerd-header {
       position: absolute;
-      left: 22px;
+      left: 28px;
       top: 50%;
       transform: translateY(-50%);
-      width: 105px;
+      width: 78px;
       height: auto;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 6px 8px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      background: rgba(255, 255, 255, 0.96);
+      padding: 5px;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.16);
     }
 
     .texto-encabezado {
-      padding-left: 130px;
-      padding-right: 280px;
+      text-align: center;
+      padding-left: 110px;
+      padding-right: 300px;
     }
 
     .texto-encabezado h1 {
       margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      line-height: 1.15;
     }
 
     .texto-encabezado p {
       margin: 6px 0 0;
+      font-size: 17px;
+      font-weight: 400;
+      opacity: 0.95;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       header {
-        flex-direction: column;
-        min-height: auto;
-        padding: 14px 16px;
+        justify-content: flex-start;
+        padding: 14px 18px;
+        min-height: 78px;
       }
 
       .logo-minerd-header {
         position: static;
         transform: none;
-        width: 86px;
-        margin-bottom: 8px;
+        width: 64px;
+        margin-right: 14px;
       }
 
       .texto-encabezado {
+        text-align: left;
         padding-left: 0;
         padding-right: 0;
+      }
+
+      .texto-encabezado h1 {
+        font-size: 24px;
+      }
+
+      .texto-encabezado p {
+        font-size: 14px;
       }
     }
 
