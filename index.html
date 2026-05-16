@@ -445,6 +445,46 @@
       margin-top: 0;
     }
 
+
+
+    .grid-graficos-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .tarjeta-grafico-dashboard {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(15, 76, 129, 0.07);
+      min-height: 300px;
+    }
+
+    .tarjeta-grafico-dashboard h4 {
+      margin: 0 0 12px;
+      color: #1f2937;
+      font-size: 16px;
+    }
+
+    .contenedor-canvas-dashboard {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+
+    @media (max-width: 700px) {
+      .tarjeta-grafico-dashboard {
+        min-height: 260px;
+      }
+
+      .contenedor-canvas-dashboard {
+        height: 210px;
+      }
+    }
+
     .bloque-formulario {
       background: rgba(248, 250, 252, 0.92);
       border: 1px solid #dbe3ef;
@@ -645,6 +685,7 @@
       }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -939,6 +980,36 @@
       <button onclick="cargarDashboardSeleccionado()" id="btnCargarDashboard">Cargar dashboard</button>
 
       <div id="resumenDashboard" class="tarjetas-dashboard"></div>
+
+      <div id="graficosDashboard" class="grid-graficos-dashboard oculto">
+        <div class="tarjeta-grafico-dashboard">
+          <h4 id="tituloGraficoDashboard1">Gráfico 1</h4>
+          <div class="contenedor-canvas-dashboard">
+            <canvas id="graficoDashboard1"></canvas>
+          </div>
+        </div>
+
+        <div class="tarjeta-grafico-dashboard">
+          <h4 id="tituloGraficoDashboard2">Gráfico 2</h4>
+          <div class="contenedor-canvas-dashboard">
+            <canvas id="graficoDashboard2"></canvas>
+          </div>
+        </div>
+
+        <div class="tarjeta-grafico-dashboard">
+          <h4 id="tituloGraficoDashboard3">Gráfico 3</h4>
+          <div class="contenedor-canvas-dashboard">
+            <canvas id="graficoDashboard3"></canvas>
+          </div>
+        </div>
+
+        <div class="tarjeta-grafico-dashboard">
+          <h4 id="tituloGraficoDashboard4">Gráfico 4</h4>
+          <div class="contenedor-canvas-dashboard">
+            <canvas id="graficoDashboard4"></canvas>
+          </div>
+        </div>
+      </div>
 
       <div id="dashboardAsistenciaResultados" class="oculto">
         <h3>Resumen por fecha</h3>
@@ -1242,6 +1313,7 @@
   let sedesDashboard = [];
   let sedeSeleccionadaDashboard = null;
   let dashboardActual = "";
+  let graficosDashboard = {};
   let sedesIncidencias = [];
   let sedeSeleccionadaIncidencia = null;
 
@@ -1963,15 +2035,113 @@
     const tablaAusencias = document.getElementById("tablaDashboardAusencias");
     const asistencia = document.getElementById("dashboardAsistenciaResultados");
     const matriz = document.getElementById("dashboardMatrizResultados");
+    const graficos = document.getElementById("graficosDashboard");
+
+    destruirGraficosDashboard();
 
     if (resumen) resumen.innerHTML = "";
     if (tablaFechas) tablaFechas.innerHTML = "";
     if (tablaAusencias) tablaAusencias.innerHTML = "";
     if (asistencia) asistencia.classList.add("oculto");
+    if (graficos) graficos.classList.add("oculto");
     if (matriz) {
       matriz.innerHTML = "";
       matriz.classList.add("oculto");
     }
+  }
+
+  function destruirGraficosDashboard() {
+    Object.keys(graficosDashboard).forEach(function(clave) {
+      if (graficosDashboard[clave]) {
+        graficosDashboard[clave].destroy();
+      }
+    });
+
+    graficosDashboard = {};
+  }
+
+  function mostrarBloqueGraficosDashboard() {
+    const contenedor = document.getElementById("graficosDashboard");
+    if (contenedor) contenedor.classList.remove("oculto");
+  }
+
+  function crearGraficoDashboard(idCanvas, tipo, etiquetas, datasets, opcionesExtra) {
+    const canvas = document.getElementById(idCanvas);
+    if (!canvas || typeof Chart === "undefined") return;
+
+    if (graficosDashboard[idCanvas]) {
+      graficosDashboard[idCanvas].destroy();
+    }
+
+    const opcionesBase = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          enabled: true
+        }
+      },
+      scales: tipo === "doughnut" || tipo === "pie" ? {} : {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          }
+        }
+      }
+    };
+
+    const opciones = mezclarOpcionesDashboard(opcionesBase, opcionesExtra || {});
+
+    graficosDashboard[idCanvas] = new Chart(canvas, {
+      type: tipo,
+      data: {
+        labels: etiquetas,
+        datasets: datasets
+      },
+      options: opciones
+    });
+  }
+
+  function mezclarOpcionesDashboard(base, extra) {
+    const salida = Object.assign({}, base);
+
+    Object.keys(extra).forEach(function(k) {
+      if (extra[k] && typeof extra[k] === "object" && !Array.isArray(extra[k])) {
+        salida[k] = mezclarOpcionesDashboard(salida[k] || {}, extra[k]);
+      } else {
+        salida[k] = extra[k];
+      }
+    });
+
+    return salida;
+  }
+
+  function contarPorCampoDashboard(lista, campo) {
+    const conteo = {};
+
+    (lista || []).forEach(function(item) {
+      const clave = normalizarTexto(item[campo]) || "Sin especificar";
+      conteo[clave] = (conteo[clave] || 0) + 1;
+    });
+
+    return conteo;
+  }
+
+  function ordenarConteoDashboard(conteo, limite) {
+    return Object.keys(conteo)
+      .map(function(clave) {
+        return { etiqueta: clave, valor: conteo[clave] };
+      })
+      .sort(function(a, b) { return b.valor - a.valor; })
+      .slice(0, limite || 10);
   }
 
   function mostrarMatrizDashboardBasica(tipo) {
@@ -1979,6 +2149,16 @@
 
     const matriz = document.getElementById("dashboardMatrizResultados");
     matriz.classList.remove("oculto");
+    mostrarBloqueGraficosDashboard();
+    document.getElementById("tituloGraficoDashboard1").textContent = "Indicadores generales";
+    document.getElementById("tituloGraficoDashboard2").textContent = "Distribución";
+    document.getElementById("tituloGraficoDashboard3").textContent = "Comparativo";
+    document.getElementById("tituloGraficoDashboard4").textContent = "Seguimiento";
+    crearGraficoDashboard("graficoDashboard1", "bar", [obtenerNombreDashboard(tipo)], [{ label: "Registros disponibles", data: [0], backgroundColor: "#2563eb" }]);
+    crearGraficoDashboard("graficoDashboard2", "doughnut", ["Sin datos cargados"], [{ label: "Registros", data: [1], backgroundColor: ["#e2e8f0"] }]);
+    crearGraficoDashboard("graficoDashboard3", "bar", ["Regional", "Distrito", "Sede", "Grupo"], [{ label: "Filtros activos", data: [document.getElementById("regionalDashboard").value ? 1 : 0, document.getElementById("distritoDashboard").value ? 1 : 0, document.getElementById("sedeDashboard").value ? 1 : 0, document.getElementById("grupoDashboard").value ? 1 : 0], backgroundColor: "#0d9488" }]);
+    crearGraficoDashboard("graficoDashboard4", "line", ["Inicio", "Fin"], [{ label: "Periodo seleccionado", data: [document.getElementById("fechaInicioDashboard").value ? 1 : 0, document.getElementById("fechaFinDashboard").value ? 1 : 0], borderColor: "#475569", backgroundColor: "rgba(71,85,105,0.12)", fill: true }]);
+
     matriz.innerHTML = `
       <table>
         <thead>
@@ -2056,6 +2236,74 @@
     document.body.appendChild(script);
   }
 
+  function construirGraficosIncidencias(incidencias) {
+    mostrarBloqueGraficosDashboard();
+
+    document.getElementById("tituloGraficoDashboard1").textContent = "Incidencias por gravedad";
+    document.getElementById("tituloGraficoDashboard2").textContent = "Incidencias por estado";
+    document.getElementById("tituloGraficoDashboard3").textContent = "Incidencias por categoría";
+    document.getElementById("tituloGraficoDashboard4").textContent = "Incidencias por fecha";
+
+    const porGravedad = contarPorCampoDashboard(incidencias, "gravedad");
+    const porEstado = contarPorCampoDashboard(incidencias, "estado");
+    const porCategoria = ordenarConteoDashboard(contarPorCampoDashboard(incidencias, "categoria"), 10);
+    const porFecha = contarPorCampoDashboard(incidencias, "fechaIncidencia");
+    const fechas = Object.keys(porFecha).sort();
+
+    crearGraficoDashboard(
+      "graficoDashboard1",
+      "doughnut",
+      Object.keys(porGravedad),
+      [{
+        label: "Incidencias",
+        data: Object.values(porGravedad),
+        backgroundColor: ["#16a34a", "#f59e0b", "#ea580c", "#dc2626", "#64748b"]
+      }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard2",
+      "bar",
+      Object.keys(porEstado),
+      [{
+        label: "Incidencias",
+        data: Object.values(porEstado),
+        backgroundColor: "#2563eb"
+      }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard3",
+      "bar",
+      porCategoria.map(function(item) { return item.etiqueta; }),
+      [{
+        label: "Incidencias",
+        data: porCategoria.map(function(item) { return item.valor; }),
+        backgroundColor: "#0891b2"
+      }],
+      {
+        indexAxis: "y",
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard4",
+      "line",
+      fechas,
+      [{
+        label: "Incidencias",
+        data: fechas.map(function(fecha) { return porFecha[fecha]; }),
+        borderColor: "#ea580c",
+        backgroundColor: "rgba(234, 88, 12, 0.14)",
+        fill: true,
+        tension: 0.35
+      }]
+    );
+  }
+
   function mostrarDashboardIncidencias(incidencias) {
     const resumen = {
       total: incidencias.length,
@@ -2085,6 +2333,8 @@
       <div class="tarjeta-indicador"><span>Escaladas</span><strong>${resumen.escaladas}</strong></div>
       <div class="tarjeta-indicador"><span>Críticas</span><strong>${resumen.criticas}</strong></div>
     `;
+
+    construirGraficosIncidencias(incidencias || []);
 
     const matriz = document.getElementById("dashboardMatrizResultados");
     matriz.classList.remove("oculto");
@@ -3257,6 +3507,7 @@
       if (respuesta.ok) {
         document.getElementById("dashboardAsistenciaResultados").classList.remove("oculto");
         mostrarResumenDashboard(respuesta.resumen || {});
+        construirGraficosAsistencia(respuesta.resumen || {}, respuesta.porFecha || [], respuesta.ausenciasRecurrentes || []);
         mostrarTablaDashboardFechas(respuesta.porFecha || []);
         mostrarTablaAusenciasRecurrentes(respuesta.ausenciasRecurrentes || []);
       } else {
@@ -3310,6 +3561,87 @@
         <strong>${resumen.porcentajeAsistencia || 0}%</strong>
       </div>
     `;
+  }
+
+  function construirGraficosAsistencia(resumen, porFecha, ausenciasRecurrentes) {
+    mostrarBloqueGraficosDashboard();
+
+    document.getElementById("tituloGraficoDashboard1").textContent = "Distribución de asistencia";
+    document.getElementById("tituloGraficoDashboard2").textContent = "Porcentaje de asistencia por fecha";
+    document.getElementById("tituloGraficoDashboard3").textContent = "Estados por fecha";
+    document.getElementById("tituloGraficoDashboard4").textContent = "Ausencias recurrentes";
+
+    crearGraficoDashboard(
+      "graficoDashboard1",
+      "doughnut",
+      ["Presentes", "Tardanzas", "Ausentes", "Excusas"],
+      [{
+        label: "Registros",
+        data: [resumen.presentes || 0, resumen.tardanzas || 0, resumen.ausentes || 0, resumen.excusas || 0],
+        backgroundColor: ["#0d9488", "#f59e0b", "#dc2626", "#2563eb"]
+      }]
+    );
+
+    const fechas = (porFecha || []).map(function(d) { return d.fecha || ""; });
+
+    crearGraficoDashboard(
+      "graficoDashboard2",
+      "line",
+      fechas,
+      [{
+        label: "% asistencia",
+        data: (porFecha || []).map(function(d) { return d.porcentajeAsistencia || 0; }),
+        borderColor: "#0f4c81",
+        backgroundColor: "rgba(15, 76, 129, 0.12)",
+        fill: true,
+        tension: 0.35
+      }],
+      {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { callback: function(valor) { return valor + "%"; } }
+          }
+        }
+      }
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard3",
+      "bar",
+      fechas,
+      [
+        { label: "Presentes", data: (porFecha || []).map(function(d) { return d.presentes || 0; }), backgroundColor: "#0d9488" },
+        { label: "Tardanzas", data: (porFecha || []).map(function(d) { return d.tardanzas || 0; }), backgroundColor: "#f59e0b" },
+        { label: "Ausentes", data: (porFecha || []).map(function(d) { return d.ausentes || 0; }), backgroundColor: "#dc2626" },
+        { label: "Excusas", data: (porFecha || []).map(function(d) { return d.excusas || 0; }), backgroundColor: "#2563eb" }
+      ],
+      {
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    );
+
+    const ausencias = (ausenciasRecurrentes || []).slice(0, 10);
+    crearGraficoDashboard(
+      "graficoDashboard4",
+      "bar",
+      ausencias.map(function(e) { return e.nombre || "Sin nombre"; }),
+      [{
+        label: "Ausencias",
+        data: ausencias.map(function(e) { return e.ausencias || 0; }),
+        backgroundColor: "#dc2626"
+      }],
+      {
+        indexAxis: "y",
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    );
   }
 
   function mostrarTablaDashboardFechas(datos) {
