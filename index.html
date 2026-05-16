@@ -475,6 +475,18 @@
       width: 100%;
     }
 
+
+    /* Refuerzo para evitar que los contenedores tipo grid se muestren cuando estén ocultos */
+    .oculto {
+      display: none !important;
+    }
+
+    .grid-graficos-dashboard.oculto,
+    .tabla-contenedor.oculto,
+    .bloque-formulario.oculto {
+      display: none !important;
+    }
+
     @media (max-width: 700px) {
       .tarjeta-grafico-dashboard {
         min-height: 260px;
@@ -983,28 +995,28 @@
 
       <div id="graficosDashboard" class="grid-graficos-dashboard oculto">
         <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard1">Gráfico 1</h4>
+          <h4 id="tituloGraficoDashboard1">Distribución de asistencia</h4>
           <div class="contenedor-canvas-dashboard">
             <canvas id="graficoDashboard1"></canvas>
           </div>
         </div>
 
         <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard2">Gráfico 2</h4>
+          <h4 id="tituloGraficoDashboard2">Porcentaje de asistencia por fecha</h4>
           <div class="contenedor-canvas-dashboard">
             <canvas id="graficoDashboard2"></canvas>
           </div>
         </div>
 
         <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard3">Gráfico 3</h4>
+          <h4 id="tituloGraficoDashboard3">Estados por fecha</h4>
           <div class="contenedor-canvas-dashboard">
             <canvas id="graficoDashboard3"></canvas>
           </div>
         </div>
 
         <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard4">Gráfico 4</h4>
+          <h4 id="tituloGraficoDashboard4">Ausencias recurrentes</h4>
           <div class="contenedor-canvas-dashboard">
             <canvas id="graficoDashboard4"></canvas>
           </div>
@@ -1841,6 +1853,7 @@
     };
 
     document.getElementById("tituloDashboardSeleccionado").textContent = titulos[tipo] || "Dashboard";
+    configurarTitulosGraficosDashboard(tipo);
     document.getElementById("dashboardContenido").classList.remove("oculto");
     document.getElementById("mensajeDashboard").textContent = "";
     document.getElementById("mensajeDashboard").className = "mensaje";
@@ -2144,16 +2157,61 @@
       .slice(0, limite || 10);
   }
 
+
+  function configurarTitulosGraficosDashboard(tipo) {
+    const titulos = {
+      asistencia: [
+        "Distribución de asistencia",
+        "Porcentaje de asistencia por fecha",
+        "Estados por fecha",
+        "Ausencias recurrentes"
+      ],
+      incidencias: [
+        "Incidencias por gravedad",
+        "Incidencias por estado",
+        "Incidencias por categoría",
+        "Incidencias por fecha"
+      ],
+      acompanamientos: [
+        "Acompañamientos por tipo",
+        "Estado del seguimiento",
+        "Cumplimiento observado",
+        "Acompañamientos por sede"
+      ],
+      evaluaciones: [
+        "Clasificación de estudiantes",
+        "Resultados por grupo",
+        "Comparación inicial y final",
+        "Avance por sede"
+      ],
+      ejecutivo: [
+        "Resumen general del campamento",
+        "Alertas por regional",
+        "Seguimiento por distrito",
+        "Sedes que requieren atención"
+      ]
+    };
+
+    const lista = titulos[tipo] || [
+      "Indicadores generales",
+      "Distribución de registros",
+      "Comparativo por dimensión",
+      "Seguimiento del periodo"
+    ];
+
+    for (let i = 0; i < 4; i++) {
+      const titulo = document.getElementById("tituloGraficoDashboard" + (i + 1));
+      if (titulo) titulo.textContent = lista[i];
+    }
+  }
+
   function mostrarMatrizDashboardBasica(tipo) {
     limpiarResultadosDashboard();
 
     const matriz = document.getElementById("dashboardMatrizResultados");
     matriz.classList.remove("oculto");
     mostrarBloqueGraficosDashboard();
-    document.getElementById("tituloGraficoDashboard1").textContent = "Indicadores generales";
-    document.getElementById("tituloGraficoDashboard2").textContent = "Distribución";
-    document.getElementById("tituloGraficoDashboard3").textContent = "Comparativo";
-    document.getElementById("tituloGraficoDashboard4").textContent = "Seguimiento";
+    configurarTitulosGraficosDashboard(tipo);
     crearGraficoDashboard("graficoDashboard1", "bar", [obtenerNombreDashboard(tipo)], [{ label: "Registros disponibles", data: [0], backgroundColor: "#2563eb" }]);
     crearGraficoDashboard("graficoDashboard2", "doughnut", ["Sin datos cargados"], [{ label: "Registros", data: [1], backgroundColor: ["#e2e8f0"] }]);
     crearGraficoDashboard("graficoDashboard3", "bar", ["Regional", "Distrito", "Sede", "Grupo"], [{ label: "Filtros activos", data: [document.getElementById("regionalDashboard").value ? 1 : 0, document.getElementById("distritoDashboard").value ? 1 : 0, document.getElementById("sedeDashboard").value ? 1 : 0, document.getElementById("grupoDashboard").value ? 1 : 0], backgroundColor: "#0d9488" }]);
@@ -2239,10 +2297,7 @@
   function construirGraficosIncidencias(incidencias) {
     mostrarBloqueGraficosDashboard();
 
-    document.getElementById("tituloGraficoDashboard1").textContent = "Incidencias por gravedad";
-    document.getElementById("tituloGraficoDashboard2").textContent = "Incidencias por estado";
-    document.getElementById("tituloGraficoDashboard3").textContent = "Incidencias por categoría";
-    document.getElementById("tituloGraficoDashboard4").textContent = "Incidencias por fecha";
+    configurarTitulosGraficosDashboard("incidencias");
 
     const porGravedad = contarPorCampoDashboard(incidencias, "gravedad");
     const porEstado = contarPorCampoDashboard(incidencias, "estado");
@@ -3566,10 +3621,7 @@
   function construirGraficosAsistencia(resumen, porFecha, ausenciasRecurrentes) {
     mostrarBloqueGraficosDashboard();
 
-    document.getElementById("tituloGraficoDashboard1").textContent = "Distribución de asistencia";
-    document.getElementById("tituloGraficoDashboard2").textContent = "Porcentaje de asistencia por fecha";
-    document.getElementById("tituloGraficoDashboard3").textContent = "Estados por fecha";
-    document.getElementById("tituloGraficoDashboard4").textContent = "Ausencias recurrentes";
+    configurarTitulosGraficosDashboard("asistencia");
 
     crearGraficoDashboard(
       "graficoDashboard1",
