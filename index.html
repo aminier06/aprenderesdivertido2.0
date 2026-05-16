@@ -1314,7 +1314,7 @@
         </div>
       </div>
 
-      <button onclick="consultarIncidencias()">Aplicar filtros</button>
+      <button onclick="consultarIncidencias(modoIncidenciaActual === 'seguimiento')">Aplicar filtros</button>
       <div id="tablaIncidencias" class="tabla-contenedor"></div>
     </div>
 
@@ -1344,6 +1344,7 @@
   let graficosDashboard = {};
   let sedesIncidencias = [];
   let sedeSeleccionadaIncidencia = null;
+  let modoIncidenciaActual = "consulta";
 
   const itemsCoordinador = [
     ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
@@ -3054,6 +3055,7 @@
     document.getElementById("bloqueConsultaIncidencia").classList.add("oculto");
     document.getElementById("mensajeIncidencia").textContent = "";
     document.getElementById("mensajeIncidencia").className = "mensaje";
+    document.getElementById("tablaIncidencias").innerHTML = "";
 
     if (vista === "registro") {
       mostrarFormularioIncidencia();
@@ -3061,18 +3063,20 @@
     }
 
     if (vista === "consulta") {
+      modoIncidenciaActual = "consulta";
       document.getElementById("tituloConsultaIncidencia").textContent = "Consulta de incidencias";
       document.getElementById("filtroEstadoIncidencia").value = "";
       document.getElementById("bloqueConsultaIncidencia").classList.remove("oculto");
-      consultarIncidencias();
+      consultarIncidencias(false);
       return;
     }
 
     if (vista === "seguimiento") {
+      modoIncidenciaActual = "seguimiento";
       document.getElementById("tituloConsultaIncidencia").textContent = "Seguimiento de incidencias";
       document.getElementById("filtroEstadoIncidencia").value = "";
       document.getElementById("bloqueConsultaIncidencia").classList.remove("oculto");
-      consultarIncidencias();
+      consultarIncidencias(true);
     }
   }
 
@@ -3387,7 +3391,8 @@
     document.body.appendChild(script);
   }
 
-  function consultarIncidencias() {
+  function consultarIncidencias(permiteActualizar) {
+    permiteActualizar = permiteActualizar === true;
     const mensaje = document.getElementById("mensajeIncidencia");
     const tabla = document.getElementById("tablaIncidencias");
 
@@ -3418,9 +3423,19 @@
 
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
-        mensaje.textContent = "Consulta cargada correctamente.";
-        mensaje.classList.add("ok");
-        construirTablaIncidencias(respuesta.incidencias || []);
+        mensaje.textContent = "";
+        mensaje.className = "mensaje";
+
+        let incidencias = respuesta.incidencias || [];
+
+        if (permiteActualizar && !document.getElementById("filtroEstadoIncidencia").value) {
+          incidencias = incidencias.filter(function(item) {
+            const estado = normalizarTexto(item.estado || item.Estado || "");
+            return estado === "Registrada" || estado === "En seguimiento" || estado === "Escalada";
+          });
+        }
+
+        construirTablaIncidencias(incidencias, permiteActualizar);
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudieron consultar las incidencias.";
         mensaje.classList.add("error");
@@ -3447,11 +3462,14 @@
     return "baja";
   }
 
-  function construirTablaIncidencias(datos) {
+  function construirTablaIncidencias(datos, permiteActualizar) {
+    permiteActualizar = permiteActualizar === true;
     const contenedor = document.getElementById("tablaIncidencias");
 
     if (!datos || datos.length === 0) {
-      contenedor.innerHTML = "<p>No hay incidencias registradas para los filtros seleccionados.</p>";
+      contenedor.innerHTML = permiteActualizar
+        ? "<p>No hay incidencias abiertas, en seguimiento o escaladas para los filtros seleccionados.</p>"
+        : "<p>No hay incidencias registradas para los filtros seleccionados.</p>";
       return;
     }
 
@@ -3465,7 +3483,13 @@
     html += "<th>Gravedad</th>";
     html += "<th>Estado</th>";
     html += "<th>Descripción</th>";
-    html += "<th>Seguimiento</th>";
+    html += "<th>Responsable</th>";
+    html += "<th>Observaciones</th>";
+
+    if (permiteActualizar) {
+      html += "<th>Seguimiento</th>";
+    }
+
     html += "</tr></thead><tbody>";
 
     datos.forEach(function(incidencia, index) {
@@ -3473,6 +3497,10 @@
       const gravedad = incidencia.gravedad || incidencia.Gravedad || "";
       const estado = incidencia.estado || incidencia.Estado || "";
       const descripcion = incidencia.descripcion || incidencia.Descripcion || "";
+      const responsable = incidencia.responsableSeguimiento || incidencia.ResponsableSeguimiento || "";
+      const observaciones = incidencia.observacionesSeguimiento || incidencia.ObservacionesSeguimiento || "";
+      const descripcionCorta = descripcion.length > 160 ? descripcion.substring(0, 160) + "..." : descripcion;
+      const observacionesCortas = observaciones.length > 160 ? observaciones.substring(0, 160) + "..." : observaciones;
 
       html += "<tr>";
       html += `<td>${id}</td>`;
@@ -3482,19 +3510,25 @@
       html += `<td>${incidencia.categoria || incidencia.Categoria || ""}</td>`;
       html += `<td><span class="badge-gravedad ${claseGravedad(gravedad)}">${gravedad}</span></td>`;
       html += `<td><span class="badge-estado">${estado}</span></td>`;
-      html += `<td>${descripcion.length > 160 ? descripcion.substring(0, 160) + "..." : descripcion}</td>`;
-      html += `<td>
-        <div class="acciones-tabla">
-          <select id="estadoIncidenciaTabla_${index}">
-            <option value="Registrada" ${estado === "Registrada" ? "selected" : ""}>Registrada</option>
-            <option value="En seguimiento" ${estado === "En seguimiento" ? "selected" : ""}>En seguimiento</option>
-            <option value="Resuelta" ${estado === "Resuelta" ? "selected" : ""}>Resuelta</option>
-            <option value="Escalada" ${estado === "Escalada" ? "selected" : ""}>Escalada</option>
-            <option value="Cerrada" ${estado === "Cerrada" ? "selected" : ""}>Cerrada</option>
-          </select>
-          <button onclick="actualizarEstadoIncidencia('${String(id).replace(/'/g, "\\'")}', document.getElementById('estadoIncidenciaTabla_${index}').value)">Actualizar</button>
-        </div>
-      </td>`;
+      html += `<td>${descripcionCorta}</td>`;
+      html += `<td>${responsable}</td>`;
+      html += `<td>${observacionesCortas}</td>`;
+
+      if (permiteActualizar) {
+        html += `<td>
+          <div class="acciones-tabla">
+            <select id="estadoIncidenciaTabla_${index}">
+              <option value="Registrada" ${estado === "Registrada" ? "selected" : ""}>Registrada</option>
+              <option value="En seguimiento" ${estado === "En seguimiento" ? "selected" : ""}>En seguimiento</option>
+              <option value="Resuelta" ${estado === "Resuelta" ? "selected" : ""}>Resuelta</option>
+              <option value="Escalada" ${estado === "Escalada" ? "selected" : ""}>Escalada</option>
+              <option value="Cerrada" ${estado === "Cerrada" ? "selected" : ""}>Cerrada</option>
+            </select>
+            <button onclick="actualizarEstadoIncidencia('${String(id).replace(/'/g, "\\'")}', document.getElementById('estadoIncidenciaTabla_${index}').value)">Actualizar</button>
+          </div>
+        </td>`;
+      }
+
       html += "</tr>";
     });
 
@@ -3530,7 +3564,7 @@
       if (respuesta.ok) {
         mensaje.textContent = respuesta.mensaje || "Incidencia actualizada correctamente.";
         mensaje.classList.add("ok");
-        consultarIncidencias();
+        consultarIncidencias(true);
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudo actualizar la incidencia.";
         mensaje.classList.add("error");
