@@ -43,7 +43,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      min-height: 100px;
+      min-height: 86px;
       box-sizing: border-box;
       box-shadow: 0 4px 14px rgba(15, 76, 129, 0.22);
     }
@@ -63,59 +63,53 @@
 
     .texto-encabezado {
       text-align: center;
-      padding-left: 120px;
-      padding-right: 315px;
+      padding-left: 110px;
+      padding-right: 300px;
     }
 
     .texto-encabezado h1 {
       margin: 0;
-      font-size: 22px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: 650;
       letter-spacing: 0.2px;
-      line-height: 1.15;
-      opacity: 0.96;
+      line-height: 1.1;
     }
 
     .texto-encabezado p {
       margin: 6px 0 0;
-      font-size: 36px;
+      font-size: 32px;
       font-weight: 800;
       letter-spacing: 0.2px;
-      line-height: 1.08;
+      line-height: 1.1;
       opacity: 1;
     }
 
     @media (max-width: 900px) {
       header {
         justify-content: flex-start;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
         padding: 14px 18px;
-        min-height: auto;
+        min-height: 78px;
       }
 
       .logo-minerd-header {
         position: static;
         transform: none;
         width: 64px;
-        margin-right: 0;
+        margin-right: 14px;
       }
 
       .texto-encabezado {
-        flex: 1;
-        min-width: 220px;
         text-align: left;
         padding-left: 0;
         padding-right: 0;
       }
 
       .texto-encabezado h1 {
-        font-size: 16px;
+        font-size: 18px;
       }
 
       .texto-encabezado p {
-        font-size: 25px;
+        font-size: 24px;
       }
     }
 
@@ -696,6 +690,150 @@
       margin-bottom: 14px;
     }
 
+
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+      margin-top: 22px;
+    }
+
+    .menu-dashboard-lateral {
+      position: sticky;
+      top: 18px;
+      background: rgba(248, 250, 252, 0.96);
+      border: 1px solid #dbe3ef;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 4px 14px rgba(15, 76, 129, 0.07);
+    }
+
+    .menu-dashboard-lateral h3 {
+      font-size: 16px;
+      color: #334155;
+      margin: 4px 8px 12px;
+    }
+
+    .item-dashboard-lateral {
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .item-dashboard-lateral:hover {
+      background: #edf6ff;
+      border-color: #cfe0f3;
+      transform: translateX(2px);
+    }
+
+    .item-dashboard-lateral.activo {
+      background: #e8f1fb;
+      border-color: #bcd5ef;
+      box-shadow: inset 4px 0 0 #0f4c81;
+    }
+
+    .item-dashboard-lateral .mini-icono-dashboard {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 76, 129, 0.11);
+      color: #0f4c81;
+      flex: 0 0 auto;
+    }
+
+    .item-dashboard-lateral svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .dashboard-area-principal {
+      min-width: 0;
+    }
+
+    .dashboard-contenido {
+      background: rgba(248, 250, 252, 0.92);
+      border: 1px solid #dbe3ef;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .dashboard-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .dashboard-topbar h3 {
+      margin: 0 0 6px;
+      color: #1f2937;
+    }
+
+    .descripcion-dashboard {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .panel-filtros-dashboard {
+      background: #ffffff;
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .panel-filtros-dashboard .grid-filtros-dashboard {
+      margin-top: 0;
+    }
+
+    @media (max-width: 980px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-dashboard-lateral {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+
+      .menu-dashboard-lateral h3 {
+        grid-column: 1 / -1;
+      }
+
+      .item-dashboard-lateral {
+        margin-bottom: 0;
+      }
+    }
+
+
     footer {
       text-align: center;
       margin: 30px;
@@ -897,170 +1035,174 @@
 
   <section id="moduloDashboard" class="tarjeta oculto">
     <h2>Dashboards del campamento</h2>
-    <p class="nota">Seleccione el tablero que desea consultar. Este módulo es únicamente para visualización, análisis y seguimiento.</p>
+    <p class="nota">Visualice los indicadores del campamento mediante gráficos y matrices filtrables según el alcance de su usuario.</p>
 
     <div class="datos-usuario" id="datosUsuarioDashboard"></div>
-
-    <div class="grid">
-      <div class="modulo modulo-dashboard" onclick="abrirDashboard('asistencia')">
-        <div class="icono-modulo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-            <path d="M7 16v-4"></path>
-            <path d="M12 16V8"></path>
-            <path d="M17 16v-6"></path>
-            <path d="M6.5 18h11"></path>
-          </svg>
-        </div>
-        <h3>Asistencia</h3>
-        <p>Indicadores diarios, porcentaje de asistencia y ausencias recurrentes.</p>
-      </div>
-
-      <div class="modulo modulo-incidencias" onclick="abrirDashboard('incidencias')">
-        <div class="icono-modulo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 3l9 16H3L12 3z"></path>
-            <path d="M12 8v5"></path>
-            <path d="M12 17h.01"></path>
-          </svg>
-        </div>
-        <h3>Incidencias</h3>
-        <p>Gráficos por gravedad, categoría, estado, regional, distrito y sede.</p>
-      </div>
-
-      <div class="modulo modulo-acompanamientos" onclick="abrirDashboard('acompanamientos')">
-        <div class="icono-modulo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <rect x="4" y="3" width="11" height="16" rx="2"></rect>
-            <path d="M7 8h5"></path>
-            <path d="M7 12h4"></path>
-            <circle cx="16.5" cy="16.5" r="3.5"></circle>
-            <path d="M19 19l2 2"></path>
-          </svg>
-        </div>
-        <h3>Acompañamientos</h3>
-        <p>Seguimiento a acompañamientos realizados, pendientes y cumplimiento.</p>
-      </div>
-
-      <div class="modulo modulo-evaluaciones" onclick="abrirDashboard('evaluaciones')">
-        <div class="icono-modulo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M6 3h9l3 3v15H6z"></path>
-            <path d="M15 3v4h4"></path>
-            <path d="M8.5 11.5l1.6 1.6 3.4-3.6"></path>
-            <path d="M8 17h8"></path>
-          </svg>
-        </div>
-        <h3>Evaluaciones</h3>
-        <p>Resultados iniciales y finales por grupo, sede, distrito y regional.</p>
-      </div>
-
-      <div class="modulo modulo-reportes" onclick="abrirDashboard('ejecutivo')">
-        <div class="icono-modulo" aria-hidden="true">
-          <svg viewBox="0 0 24 24">
-            <path d="M5 3h10l4 4v14H5z"></path>
-            <path d="M15 3v5h5"></path>
-            <path d="M9 17v-4"></path>
-            <path d="M12 17v-7"></path>
-            <path d="M15 17v-3"></path>
-          </svg>
-        </div>
-        <h3>Vista ejecutiva</h3>
-        <p>Resumen general por regional, distrito y sede con alertas de seguimiento.</p>
-      </div>
-    </div>
-
     <div id="mensajeDashboard" class="mensaje"></div>
 
-    <div id="dashboardContenido" class="bloque-formulario oculto">
-      <h3 id="tituloDashboardSeleccionado">Dashboard</h3>
+    <div class="dashboard-layout">
+      <aside class="menu-dashboard-lateral" aria-label="Menú de dashboards">
+        <h3>Tableros disponibles</h3>
 
-      <div class="grid-filtros-dashboard">
-        <div>
-          <label for="regionalDashboard">Regional</label>
-          <select id="regionalDashboard" onchange="cargarDistritosDashboard()">
-            <option value="">Seleccione la regional</option>
-          </select>
-        </div>
+        <button type="button" class="item-dashboard-lateral" data-dashboard="asistencia" onclick="abrirDashboard('asistencia')">
+          <span class="mini-icono-dashboard" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+              <path d="M7 16v-4"></path>
+              <path d="M12 16V8"></path>
+              <path d="M17 16v-6"></path>
+            </svg>
+          </span>
+          <span>Asistencia</span>
+        </button>
 
-        <div>
-          <label for="distritoDashboard">Distrito</label>
-          <select id="distritoDashboard" onchange="cargarSedesDashboard()">
-            <option value="">Seleccione el distrito</option>
-          </select>
-        </div>
+        <button type="button" class="item-dashboard-lateral" data-dashboard="incidencias" onclick="abrirDashboard('incidencias')">
+          <span class="mini-icono-dashboard" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3l9 16H3L12 3z"></path>
+              <path d="M12 8v5"></path>
+              <path d="M12 17h.01"></path>
+            </svg>
+          </span>
+          <span>Incidencias</span>
+        </button>
 
-        <div>
-          <label for="sedeDashboard">Centro sede</label>
-          <select id="sedeDashboard" onchange="seleccionarSedeDashboard()">
-            <option value="">Seleccione una sede</option>
-          </select>
-        </div>
+        <button type="button" class="item-dashboard-lateral" data-dashboard="acompanamientos" onclick="abrirDashboard('acompanamientos')">
+          <span class="mini-icono-dashboard" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="3" width="11" height="16" rx="2"></rect>
+              <path d="M7 8h5"></path>
+              <path d="M7 12h4"></path>
+              <circle cx="16.5" cy="16.5" r="3.5"></circle>
+              <path d="M19 19l2 2"></path>
+            </svg>
+          </span>
+          <span>Acompañamientos</span>
+        </button>
 
-        <div>
-          <label for="grupoDashboard">Grupo</label>
-          <select id="grupoDashboard">
-            <option value="">Todos los grupos permitidos</option>
-            <option value="EXPLORADORES">EXPLORADORES</option>
-            <option value="CREADORES">CREADORES</option>
-            <option value="INNOVADORES">INNOVADORES</option>
-          </select>
-        </div>
+        <button type="button" class="item-dashboard-lateral" data-dashboard="evaluaciones" onclick="abrirDashboard('evaluaciones')">
+          <span class="mini-icono-dashboard" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 3h9l3 3v15H6z"></path>
+              <path d="M15 3v4h4"></path>
+              <path d="M8.5 11.5l1.6 1.6 3.4-3.6"></path>
+            </svg>
+          </span>
+          <span>Evaluaciones</span>
+        </button>
 
-        <div>
-          <label for="fechaInicioDashboard">Fecha inicial</label>
-          <input type="date" id="fechaInicioDashboard">
-        </div>
+        <button type="button" class="item-dashboard-lateral" data-dashboard="ejecutivo" onclick="abrirDashboard('ejecutivo')">
+          <span class="mini-icono-dashboard" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 3h10l4 4v14H5z"></path>
+              <path d="M15 3v5h5"></path>
+              <path d="M9 17v-4"></path>
+              <path d="M12 17v-7"></path>
+              <path d="M15 17v-3"></path>
+            </svg>
+          </span>
+          <span>Vista ejecutiva</span>
+        </button>
+      </aside>
 
-        <div>
-          <label for="fechaFinDashboard">Fecha final</label>
-          <input type="date" id="fechaFinDashboard">
-        </div>
-      </div>
-
-      <button onclick="cargarDashboardSeleccionado()" id="btnCargarDashboard">Cargar dashboard</button>
-
-      <div id="resumenDashboard" class="tarjetas-dashboard"></div>
-
-      <div id="graficosDashboard" class="grid-graficos-dashboard oculto">
-        <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard1">Distribución de asistencia</h4>
-          <div class="contenedor-canvas-dashboard">
-            <canvas id="graficoDashboard1"></canvas>
+      <main class="dashboard-area-principal">
+        <div id="dashboardContenido" class="dashboard-contenido oculto">
+          <div class="dashboard-topbar">
+            <div>
+              <h3 id="tituloDashboardSeleccionado">Dashboard</h3>
+              <p id="descripcionDashboardSeleccionado" class="descripcion-dashboard"></p>
+            </div>
+            <button type="button" class="btn-secundario" onclick="cargarDashboardSeleccionado()" id="btnCargarDashboard">Actualizar dashboard</button>
           </div>
-        </div>
 
-        <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard2">Porcentaje de asistencia por fecha</h4>
-          <div class="contenedor-canvas-dashboard">
-            <canvas id="graficoDashboard2"></canvas>
+          <div class="panel-filtros-dashboard">
+            <div class="grid-filtros-dashboard">
+              <div>
+                <label for="regionalDashboard">Regional</label>
+                <select id="regionalDashboard" onchange="cargarDistritosDashboard()">
+                  <option value="">Seleccione la regional</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="distritoDashboard">Distrito</label>
+                <select id="distritoDashboard" onchange="cargarSedesDashboard()">
+                  <option value="">Seleccione el distrito</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="sedeDashboard">Centro sede</label>
+                <select id="sedeDashboard" onchange="seleccionarSedeDashboard()">
+                  <option value="">Seleccione una sede</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="grupoDashboard">Grupo</label>
+                <select id="grupoDashboard">
+                  <option value="">Todos los grupos permitidos</option>
+                  <option value="EXPLORADORES">EXPLORADORES</option>
+                  <option value="CREADORES">CREADORES</option>
+                  <option value="INNOVADORES">INNOVADORES</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="fechaInicioDashboard">Fecha inicial</label>
+                <input type="date" id="fechaInicioDashboard">
+              </div>
+
+              <div>
+                <label for="fechaFinDashboard">Fecha final</label>
+                <input type="date" id="fechaFinDashboard">
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard3">Estados por fecha</h4>
-          <div class="contenedor-canvas-dashboard">
-            <canvas id="graficoDashboard3"></canvas>
+          <div id="resumenDashboard" class="tarjetas-dashboard"></div>
+
+          <div id="graficosDashboard" class="grid-graficos-dashboard oculto">
+            <div class="tarjeta-grafico-dashboard">
+              <h4 id="tituloGraficoDashboard1">Distribución de asistencia</h4>
+              <div class="contenedor-canvas-dashboard">
+                <canvas id="graficoDashboard1"></canvas>
+              </div>
+            </div>
+
+            <div class="tarjeta-grafico-dashboard">
+              <h4 id="tituloGraficoDashboard2">Porcentaje de asistencia por fecha</h4>
+              <div class="contenedor-canvas-dashboard">
+                <canvas id="graficoDashboard2"></canvas>
+              </div>
+            </div>
+
+            <div class="tarjeta-grafico-dashboard">
+              <h4 id="tituloGraficoDashboard3">Estados por fecha</h4>
+              <div class="contenedor-canvas-dashboard">
+                <canvas id="graficoDashboard3"></canvas>
+              </div>
+            </div>
+
+            <div class="tarjeta-grafico-dashboard">
+              <h4 id="tituloGraficoDashboard4">Ausencias recurrentes</h4>
+              <div class="contenedor-canvas-dashboard">
+                <canvas id="graficoDashboard4"></canvas>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="tarjeta-grafico-dashboard">
-          <h4 id="tituloGraficoDashboard4">Ausencias recurrentes</h4>
-          <div class="contenedor-canvas-dashboard">
-            <canvas id="graficoDashboard4"></canvas>
+          <div id="dashboardAsistenciaResultados" class="oculto">
+            <h3>Resumen por fecha</h3>
+            <div id="tablaDashboardFechas" class="tabla-contenedor"></div>
+
+            <h3>Estudiantes con ausencias recurrentes</h3>
+            <div id="tablaDashboardAusencias" class="tabla-contenedor"></div>
           </div>
+
+          <div id="dashboardMatrizResultados" class="tabla-contenedor oculto"></div>
         </div>
-      </div>
-
-      <div id="dashboardAsistenciaResultados" class="oculto">
-        <h3>Resumen por fecha</h3>
-        <div id="tablaDashboardFechas" class="tabla-contenedor"></div>
-
-        <h3>Estudiantes con ausencias recurrentes</h3>
-        <div id="tablaDashboardAusencias" class="tabla-contenedor"></div>
-      </div>
-
-      <div id="dashboardMatrizResultados" class="tabla-contenedor oculto"></div>
+      </main>
     </div>
 
     <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
@@ -1327,7 +1469,7 @@
         </div>
       </div>
 
-      <button onclick="consultarIncidencias()">Aplicar filtros</button>
+      <button onclick="consultarIncidencias(modoIncidenciaActual === 'seguimiento')">Aplicar filtros</button>
       <div id="tablaIncidencias" class="tabla-contenedor"></div>
     </div>
 
@@ -1357,6 +1499,7 @@
   let graficosDashboard = {};
   let sedesIncidencias = [];
   let sedeSeleccionadaIncidencia = null;
+  let modoIncidenciaActual = "consulta";
 
   const itemsCoordinador = [
     ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
@@ -1863,6 +2006,8 @@
     document.getElementById("mensajeDashboard").className = "mensaje";
     document.getElementById("dashboardContenido").classList.add("oculto");
     limpiarResultadosDashboard();
+
+    abrirDashboard("asistencia");
   }
 
   function abrirDashboard(tipo) {
@@ -1881,7 +2026,18 @@
       ejecutivo: "Vista ejecutiva del campamento"
     };
 
+    const descripciones = {
+      asistencia: "Vista general de asistencia, tardanzas, ausencias, excusas y recurrencia por estudiante.",
+      incidencias: "Seguimiento visual de incidencias por gravedad, estado, categoría y fecha.",
+      acompanamientos: "Resumen de acompañamientos realizados, niveles de cumplimiento y casos que requieren seguimiento.",
+      evaluaciones: "Visualización de resultados iniciales y finales por grupo, sede, distrito y regional.",
+      ejecutivo: "Consolidado general del campamento para identificar alertas y tomar decisiones."
+    };
+
     document.getElementById("tituloDashboardSeleccionado").textContent = titulos[tipo] || "Dashboard";
+    const descripcion = document.getElementById("descripcionDashboardSeleccionado");
+    if (descripcion) descripcion.textContent = descripciones[tipo] || "";
+    actualizarMenuDashboardActivo(tipo);
     configurarTitulosGraficosDashboard(tipo);
     document.getElementById("dashboardContenido").classList.remove("oculto");
     document.getElementById("mensajeDashboard").textContent = "";
@@ -1904,6 +2060,16 @@
     cargarSedesPermitidasDashboard();
   }
 
+  function actualizarMenuDashboardActivo(tipo) {
+    document.querySelectorAll(".item-dashboard-lateral").forEach(function(btn) {
+      if (btn.getAttribute("data-dashboard") === tipo) {
+        btn.classList.add("activo");
+      } else {
+        btn.classList.remove("activo");
+      }
+    });
+  }
+
   function abrirDashboardAsistencia() {
     abrirDashboard("asistencia");
   }
@@ -1923,9 +2089,12 @@
         if (sedesDashboard.length === 0) {
           mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
           mensaje.classList.add("error");
+        } else {
+          setTimeout(cargarDashboardSeleccionado, 0);
         }
       } else {
         cargarSedeDashboardDesdeUsuario();
+        setTimeout(cargarDashboardSeleccionado, 0);
       }
 
       delete window[callbackName];
@@ -3067,6 +3236,7 @@
     document.getElementById("bloqueConsultaIncidencia").classList.add("oculto");
     document.getElementById("mensajeIncidencia").textContent = "";
     document.getElementById("mensajeIncidencia").className = "mensaje";
+    document.getElementById("tablaIncidencias").innerHTML = "";
 
     if (vista === "registro") {
       mostrarFormularioIncidencia();
@@ -3074,18 +3244,20 @@
     }
 
     if (vista === "consulta") {
+      modoIncidenciaActual = "consulta";
       document.getElementById("tituloConsultaIncidencia").textContent = "Consulta de incidencias";
       document.getElementById("filtroEstadoIncidencia").value = "";
       document.getElementById("bloqueConsultaIncidencia").classList.remove("oculto");
-      consultarIncidencias();
+      consultarIncidencias(false);
       return;
     }
 
     if (vista === "seguimiento") {
+      modoIncidenciaActual = "seguimiento";
       document.getElementById("tituloConsultaIncidencia").textContent = "Seguimiento de incidencias";
       document.getElementById("filtroEstadoIncidencia").value = "";
       document.getElementById("bloqueConsultaIncidencia").classList.remove("oculto");
-      consultarIncidencias();
+      consultarIncidencias(true);
     }
   }
 
@@ -3400,7 +3572,8 @@
     document.body.appendChild(script);
   }
 
-  function consultarIncidencias() {
+  function consultarIncidencias(permiteActualizar) {
+    permiteActualizar = permiteActualizar === true;
     const mensaje = document.getElementById("mensajeIncidencia");
     const tabla = document.getElementById("tablaIncidencias");
 
@@ -3431,9 +3604,19 @@
 
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
-        mensaje.textContent = "Consulta cargada correctamente.";
-        mensaje.classList.add("ok");
-        construirTablaIncidencias(respuesta.incidencias || []);
+        mensaje.textContent = "";
+        mensaje.className = "mensaje";
+
+        let incidencias = respuesta.incidencias || [];
+
+        if (permiteActualizar && !document.getElementById("filtroEstadoIncidencia").value) {
+          incidencias = incidencias.filter(function(item) {
+            const estado = normalizarTexto(item.estado || item.Estado || "");
+            return estado === "Registrada" || estado === "En seguimiento" || estado === "Escalada";
+          });
+        }
+
+        construirTablaIncidencias(incidencias, permiteActualizar);
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudieron consultar las incidencias.";
         mensaje.classList.add("error");
@@ -3460,11 +3643,14 @@
     return "baja";
   }
 
-  function construirTablaIncidencias(datos) {
+  function construirTablaIncidencias(datos, permiteActualizar) {
+    permiteActualizar = permiteActualizar === true;
     const contenedor = document.getElementById("tablaIncidencias");
 
     if (!datos || datos.length === 0) {
-      contenedor.innerHTML = "<p>No hay incidencias registradas para los filtros seleccionados.</p>";
+      contenedor.innerHTML = permiteActualizar
+        ? "<p>No hay incidencias abiertas, en seguimiento o escaladas para los filtros seleccionados.</p>"
+        : "<p>No hay incidencias registradas para los filtros seleccionados.</p>";
       return;
     }
 
@@ -3478,7 +3664,13 @@
     html += "<th>Gravedad</th>";
     html += "<th>Estado</th>";
     html += "<th>Descripción</th>";
-    html += "<th>Seguimiento</th>";
+    html += "<th>Responsable</th>";
+    html += "<th>Observaciones</th>";
+
+    if (permiteActualizar) {
+      html += "<th>Seguimiento</th>";
+    }
+
     html += "</tr></thead><tbody>";
 
     datos.forEach(function(incidencia, index) {
@@ -3486,6 +3678,10 @@
       const gravedad = incidencia.gravedad || incidencia.Gravedad || "";
       const estado = incidencia.estado || incidencia.Estado || "";
       const descripcion = incidencia.descripcion || incidencia.Descripcion || "";
+      const responsable = incidencia.responsableSeguimiento || incidencia.ResponsableSeguimiento || "";
+      const observaciones = incidencia.observacionesSeguimiento || incidencia.ObservacionesSeguimiento || "";
+      const descripcionCorta = descripcion.length > 160 ? descripcion.substring(0, 160) + "..." : descripcion;
+      const observacionesCortas = observaciones.length > 160 ? observaciones.substring(0, 160) + "..." : observaciones;
 
       html += "<tr>";
       html += `<td>${id}</td>`;
@@ -3495,19 +3691,25 @@
       html += `<td>${incidencia.categoria || incidencia.Categoria || ""}</td>`;
       html += `<td><span class="badge-gravedad ${claseGravedad(gravedad)}">${gravedad}</span></td>`;
       html += `<td><span class="badge-estado">${estado}</span></td>`;
-      html += `<td>${descripcion.length > 160 ? descripcion.substring(0, 160) + "..." : descripcion}</td>`;
-      html += `<td>
-        <div class="acciones-tabla">
-          <select id="estadoIncidenciaTabla_${index}">
-            <option value="Registrada" ${estado === "Registrada" ? "selected" : ""}>Registrada</option>
-            <option value="En seguimiento" ${estado === "En seguimiento" ? "selected" : ""}>En seguimiento</option>
-            <option value="Resuelta" ${estado === "Resuelta" ? "selected" : ""}>Resuelta</option>
-            <option value="Escalada" ${estado === "Escalada" ? "selected" : ""}>Escalada</option>
-            <option value="Cerrada" ${estado === "Cerrada" ? "selected" : ""}>Cerrada</option>
-          </select>
-          <button onclick="actualizarEstadoIncidencia('${String(id).replace(/'/g, "\\'")}', document.getElementById('estadoIncidenciaTabla_${index}').value)">Actualizar</button>
-        </div>
-      </td>`;
+      html += `<td>${descripcionCorta}</td>`;
+      html += `<td>${responsable}</td>`;
+      html += `<td>${observacionesCortas}</td>`;
+
+      if (permiteActualizar) {
+        html += `<td>
+          <div class="acciones-tabla">
+            <select id="estadoIncidenciaTabla_${index}">
+              <option value="Registrada" ${estado === "Registrada" ? "selected" : ""}>Registrada</option>
+              <option value="En seguimiento" ${estado === "En seguimiento" ? "selected" : ""}>En seguimiento</option>
+              <option value="Resuelta" ${estado === "Resuelta" ? "selected" : ""}>Resuelta</option>
+              <option value="Escalada" ${estado === "Escalada" ? "selected" : ""}>Escalada</option>
+              <option value="Cerrada" ${estado === "Cerrada" ? "selected" : ""}>Cerrada</option>
+            </select>
+            <button onclick="actualizarEstadoIncidencia('${String(id).replace(/'/g, "\\'")}', document.getElementById('estadoIncidenciaTabla_${index}').value)">Actualizar</button>
+          </div>
+        </td>`;
+      }
+
       html += "</tr>";
     });
 
@@ -3543,7 +3745,7 @@
       if (respuesta.ok) {
         mensaje.textContent = respuesta.mensaje || "Incidencia actualizada correctamente.";
         mensaje.classList.add("ok");
-        consultarIncidencias();
+        consultarIncidencias(true);
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudo actualizar la incidencia.";
         mensaje.classList.add("error");
