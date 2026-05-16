@@ -432,6 +432,19 @@
       color: #0f4c81;
     }
 
+
+    .grid-filtros-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 15px;
+      align-items: end;
+    }
+
+    .grid-filtros-dashboard label {
+      margin-top: 0;
+    }
+
     .bloque-formulario {
       background: rgba(248, 250, 252, 0.92);
       border: 1px solid #dbe3ef;
@@ -807,7 +820,7 @@
     <div class="datos-usuario" id="datosUsuarioDashboard"></div>
 
     <div class="grid">
-      <div class="modulo modulo-dashboard" onclick="abrirDashboardAsistencia()">
+      <div class="modulo modulo-dashboard" onclick="abrirDashboard('asistencia')">
         <div class="icono-modulo" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <rect x="3" y="4" width="18" height="16" rx="2"></rect>
@@ -821,7 +834,7 @@
         <p>Indicadores diarios, porcentaje de asistencia y ausencias recurrentes.</p>
       </div>
 
-      <div class="modulo modulo-incidencias" onclick="mostrarDashboardEnConstruccion('incidencias')">
+      <div class="modulo modulo-incidencias" onclick="abrirDashboard('incidencias')">
         <div class="icono-modulo" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M12 3l9 16H3L12 3z"></path>
@@ -833,7 +846,7 @@
         <p>Gráficos por gravedad, categoría, estado, regional, distrito y sede.</p>
       </div>
 
-      <div class="modulo modulo-acompanamientos" onclick="mostrarDashboardEnConstruccion('acompañamientos')">
+      <div class="modulo modulo-acompanamientos" onclick="abrirDashboard('acompanamientos')">
         <div class="icono-modulo" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <rect x="4" y="3" width="11" height="16" rx="2"></rect>
@@ -847,7 +860,7 @@
         <p>Seguimiento a acompañamientos realizados, pendientes y cumplimiento.</p>
       </div>
 
-      <div class="modulo modulo-evaluaciones" onclick="mostrarDashboardEnConstruccion('evaluaciones')">
+      <div class="modulo modulo-evaluaciones" onclick="abrirDashboard('evaluaciones')">
         <div class="icono-modulo" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M6 3h9l3 3v15H6z"></path>
@@ -860,7 +873,7 @@
         <p>Resultados iniciales y finales por grupo, sede, distrito y regional.</p>
       </div>
 
-      <div class="modulo modulo-reportes" onclick="mostrarDashboardEnConstruccion('ejecutivo')">
+      <div class="modulo modulo-reportes" onclick="abrirDashboard('ejecutivo')">
         <div class="icono-modulo" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M5 3h10l4 4v14H5z"></path>
@@ -877,32 +890,65 @@
 
     <div id="mensajeDashboard" class="mensaje"></div>
 
-    <div id="dashboardAsistenciaContenido" class="bloque-formulario oculto">
-      <h3>Dashboard de asistencia</h3>
+    <div id="dashboardContenido" class="bloque-formulario oculto">
+      <h3 id="tituloDashboardSeleccionado">Dashboard</h3>
 
-      <label for="grupoDashboard">Grupo</label>
-      <select id="grupoDashboard">
-        <option value="">Todos los grupos permitidos</option>
-        <option value="EXPLORADORES">EXPLORADORES</option>
-        <option value="CREADORES">CREADORES</option>
-        <option value="INNOVADORES">INNOVADORES</option>
-      </select>
+      <div class="grid-filtros-dashboard">
+        <div>
+          <label for="regionalDashboard">Regional</label>
+          <select id="regionalDashboard" onchange="cargarDistritosDashboard()">
+            <option value="">Seleccione la regional</option>
+          </select>
+        </div>
 
-      <label for="fechaInicioDashboard">Fecha inicial</label>
-      <input type="date" id="fechaInicioDashboard">
+        <div>
+          <label for="distritoDashboard">Distrito</label>
+          <select id="distritoDashboard" onchange="cargarSedesDashboard()">
+            <option value="">Seleccione el distrito</option>
+          </select>
+        </div>
 
-      <label for="fechaFinDashboard">Fecha final</label>
-      <input type="date" id="fechaFinDashboard">
+        <div>
+          <label for="sedeDashboard">Centro sede</label>
+          <select id="sedeDashboard" onchange="seleccionarSedeDashboard()">
+            <option value="">Seleccione una sede</option>
+          </select>
+        </div>
 
-      <button onclick="cargarDashboardAsistencia()">Cargar dashboard de asistencia</button>
+        <div>
+          <label for="grupoDashboard">Grupo</label>
+          <select id="grupoDashboard">
+            <option value="">Todos los grupos permitidos</option>
+            <option value="EXPLORADORES">EXPLORADORES</option>
+            <option value="CREADORES">CREADORES</option>
+            <option value="INNOVADORES">INNOVADORES</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="fechaInicioDashboard">Fecha inicial</label>
+          <input type="date" id="fechaInicioDashboard">
+        </div>
+
+        <div>
+          <label for="fechaFinDashboard">Fecha final</label>
+          <input type="date" id="fechaFinDashboard">
+        </div>
+      </div>
+
+      <button onclick="cargarDashboardSeleccionado()" id="btnCargarDashboard">Cargar dashboard</button>
 
       <div id="resumenDashboard" class="tarjetas-dashboard"></div>
 
-      <h3>Resumen por fecha</h3>
-      <div id="tablaDashboardFechas" class="tabla-contenedor"></div>
+      <div id="dashboardAsistenciaResultados" class="oculto">
+        <h3>Resumen por fecha</h3>
+        <div id="tablaDashboardFechas" class="tabla-contenedor"></div>
 
-      <h3>Estudiantes con ausencias recurrentes</h3>
-      <div id="tablaDashboardAusencias" class="tabla-contenedor"></div>
+        <h3>Estudiantes con ausencias recurrentes</h3>
+        <div id="tablaDashboardAusencias" class="tabla-contenedor"></div>
+      </div>
+
+      <div id="dashboardMatrizResultados" class="tabla-contenedor oculto"></div>
     </div>
 
     <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
@@ -1193,6 +1239,9 @@
   let personasAcompanamiento = [];
   let sedeSeleccionadaAcompanamiento = null;
   let personaSeleccionadaAcompanamiento = null;
+  let sedesDashboard = [];
+  let sedeSeleccionadaDashboard = null;
+  let dashboardActual = "";
   let sedesIncidencias = [];
   let sedeSeleccionadaIncidencia = null;
 
@@ -1505,8 +1554,8 @@
           mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
           mensaje.classList.add("error");
         } else {
-          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
-          mensaje.classList.add("ok");
+          mensaje.textContent = "";
+          mensaje.className = "mensaje";
         }
 
         if (esFacilitador()) {
@@ -1693,24 +1742,39 @@
       <strong>Grupo:</strong> ${usuarioActual.grupo || ""}
     `;
 
+    dashboardActual = "";
+    sedesDashboard = [];
+    sedeSeleccionadaDashboard = null;
+
     document.getElementById("mensajeDashboard").textContent = "";
     document.getElementById("mensajeDashboard").className = "mensaje";
-    document.getElementById("dashboardAsistenciaContenido").classList.add("oculto");
-    document.getElementById("resumenDashboard").innerHTML = "";
-    document.getElementById("tablaDashboardFechas").innerHTML = "";
-    document.getElementById("tablaDashboardAusencias").innerHTML = "";
+    document.getElementById("dashboardContenido").classList.add("oculto");
+    limpiarResultadosDashboard();
   }
 
-  function abrirDashboardAsistencia() {
+  function abrirDashboard(tipo) {
     if (!usuarioActual) {
       alert("Debe iniciar sesión.");
       return;
     }
 
-    document.getElementById("dashboardAsistenciaContenido").classList.remove("oculto");
+    dashboardActual = tipo;
+
+    const titulos = {
+      asistencia: "Dashboard de asistencia",
+      incidencias: "Dashboard de incidencias",
+      acompanamientos: "Dashboard de acompañamientos",
+      evaluaciones: "Dashboard de evaluaciones",
+      ejecutivo: "Vista ejecutiva del campamento"
+    };
+
+    document.getElementById("tituloDashboardSeleccionado").textContent = titulos[tipo] || "Dashboard";
+    document.getElementById("dashboardContenido").classList.remove("oculto");
+    document.getElementById("mensajeDashboard").textContent = "";
+    document.getElementById("mensajeDashboard").className = "mensaje";
+    limpiarResultadosDashboard();
 
     const hoy = new Date().toISOString().split("T")[0];
-
     document.getElementById("fechaInicioDashboard").value = "";
     document.getElementById("fechaFinDashboard").value = hoy;
 
@@ -1723,24 +1787,334 @@
       document.getElementById("grupoDashboard").disabled = true;
     }
 
-    document.getElementById("mensajeDashboard").textContent = "";
-    document.getElementById("mensajeDashboard").className = "mensaje";
-    document.getElementById("resumenDashboard").innerHTML = "";
-    document.getElementById("tablaDashboardFechas").innerHTML = "";
-    document.getElementById("tablaDashboardAusencias").innerHTML = "";
-
-    cargarDashboardAsistencia();
+    cargarSedesPermitidasDashboard();
   }
 
-  function mostrarDashboardEnConstruccion(nombre) {
-    document.getElementById("dashboardAsistenciaContenido").classList.add("oculto");
-    document.getElementById("resumenDashboard").innerHTML = "";
-    document.getElementById("tablaDashboardFechas").innerHTML = "";
-    document.getElementById("tablaDashboardAusencias").innerHTML = "";
+  function abrirDashboardAsistencia() {
+    abrirDashboard("asistencia");
+  }
 
+  function cargarSedesPermitidasDashboard() {
     const mensaje = document.getElementById("mensajeDashboard");
-    mensaje.textContent = "El dashboard de " + nombre + " será incorporado en la siguiente fase.";
+    mensaje.textContent = "";
     mensaje.className = "mensaje";
+
+    const callbackName = "callbackSedesDashboard_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        sedesDashboard = respuesta.sedes || [];
+        llenarSelectorRegionalesDashboard(sedesDashboard);
+
+        if (sedesDashboard.length === 0) {
+          mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
+          mensaje.classList.add("error");
+        }
+      } else {
+        cargarSedeDashboardDesdeUsuario();
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=sedesPermitidas"
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function cargarSedeDashboardDesdeUsuario() {
+    sedesDashboard = [{
+      regional: usuarioActual.regional || "",
+      distrito: usuarioActual.distrito || "",
+      centroSede: usuarioActual.centroSede || "",
+      codigoSede: "",
+      coordinador: "",
+      telefono: ""
+    }].filter(function(sede) {
+      return sede.regional || sede.distrito || sede.centroSede;
+    });
+
+    llenarSelectorRegionalesDashboard(sedesDashboard);
+  }
+
+  function llenarSelectorRegionalesDashboard(sedes) {
+    const selectRegional = document.getElementById("regionalDashboard");
+    const selectDistrito = document.getElementById("distritoDashboard");
+    const selectSede = document.getElementById("sedeDashboard");
+
+    selectRegional.innerHTML = '<option value="">Seleccione la regional</option>';
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+
+    sedeSeleccionadaDashboard = null;
+
+    const regionales = obtenerValoresUnicos(sedes, "regional");
+
+    regionales.forEach(function(regional) {
+      const option = document.createElement("option");
+      option.value = regional;
+      option.textContent = regional;
+      selectRegional.appendChild(option);
+    });
+
+    if (regionales.length === 1) {
+      selectRegional.value = regionales[0];
+      cargarDistritosDashboard();
+    }
+  }
+
+  function cargarDistritosDashboard() {
+    const regionalSeleccionada = document.getElementById("regionalDashboard").value;
+    const selectDistrito = document.getElementById("distritoDashboard");
+    const selectSede = document.getElementById("sedeDashboard");
+
+    selectDistrito.innerHTML = '<option value="">Seleccione el distrito</option>';
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaDashboard = null;
+    limpiarResultadosDashboard();
+
+    if (!regionalSeleccionada) return;
+
+    const sedesFiltradas = sedesDashboard.filter(function(sede) {
+      return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada);
+    });
+
+    const distritos = obtenerValoresUnicos(sedesFiltradas, "distrito");
+
+    distritos.forEach(function(distrito) {
+      const option = document.createElement("option");
+      option.value = distrito;
+      option.textContent = distrito;
+      selectDistrito.appendChild(option);
+    });
+
+    if (distritos.length === 1) {
+      selectDistrito.value = distritos[0];
+      cargarSedesDashboard();
+    }
+  }
+
+  function cargarSedesDashboard() {
+    const regionalSeleccionada = document.getElementById("regionalDashboard").value;
+    const distritoSeleccionado = document.getElementById("distritoDashboard").value;
+    const selectSede = document.getElementById("sedeDashboard");
+
+    selectSede.innerHTML = '<option value="">Seleccione una sede</option>';
+    sedeSeleccionadaDashboard = null;
+    limpiarResultadosDashboard();
+
+    if (!regionalSeleccionada || !distritoSeleccionado) return;
+
+    const sedesFiltradas = sedesDashboard
+      .filter(function(sede) {
+        return normalizarTexto(sede.regional) === normalizarTexto(regionalSeleccionada) &&
+               normalizarTexto(sede.distrito) === normalizarTexto(distritoSeleccionado);
+      })
+      .sort(function(a, b) {
+        return normalizarTexto(a.centroSede).localeCompare(normalizarTexto(b.centroSede));
+      });
+
+    sedesFiltradas.forEach(function(sede) {
+      const option = document.createElement("option");
+      option.value = sede.centroSede;
+      option.textContent = sede.codigoSede
+        ? `${sede.codigoSede} - ${sede.centroSede}`
+        : sede.centroSede;
+      selectSede.appendChild(option);
+    });
+
+    if (sedesFiltradas.length === 1) {
+      selectSede.value = sedesFiltradas[0].centroSede;
+      seleccionarSedeDashboard();
+    }
+  }
+
+  function seleccionarSedeDashboard() {
+    const centro = document.getElementById("sedeDashboard").value;
+    sedeSeleccionadaDashboard = sedesDashboard.find(function(s) {
+      return normalizarTexto(s.centroSede) === normalizarTexto(centro);
+    }) || null;
+
+    limpiarResultadosDashboard();
+  }
+
+  function cargarDashboardSeleccionado() {
+    if (dashboardActual === "asistencia") {
+      cargarDashboardAsistencia();
+      return;
+    }
+
+    if (dashboardActual === "incidencias") {
+      cargarDashboardIncidencias();
+      return;
+    }
+
+    mostrarMatrizDashboardBasica(dashboardActual);
+  }
+
+  function limpiarResultadosDashboard() {
+    const resumen = document.getElementById("resumenDashboard");
+    const tablaFechas = document.getElementById("tablaDashboardFechas");
+    const tablaAusencias = document.getElementById("tablaDashboardAusencias");
+    const asistencia = document.getElementById("dashboardAsistenciaResultados");
+    const matriz = document.getElementById("dashboardMatrizResultados");
+
+    if (resumen) resumen.innerHTML = "";
+    if (tablaFechas) tablaFechas.innerHTML = "";
+    if (tablaAusencias) tablaAusencias.innerHTML = "";
+    if (asistencia) asistencia.classList.add("oculto");
+    if (matriz) {
+      matriz.innerHTML = "";
+      matriz.classList.add("oculto");
+    }
+  }
+
+  function mostrarMatrizDashboardBasica(tipo) {
+    limpiarResultadosDashboard();
+
+    const matriz = document.getElementById("dashboardMatrizResultados");
+    matriz.classList.remove("oculto");
+    matriz.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Dashboard</th>
+            <th>Regional</th>
+            <th>Distrito</th>
+            <th>Centro sede</th>
+            <th>Grupo</th>
+            <th>Fecha inicial</th>
+            <th>Fecha final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${obtenerNombreDashboard(tipo)}</td>
+            <td>${document.getElementById("regionalDashboard").value || "Todos"}</td>
+            <td>${document.getElementById("distritoDashboard").value || "Todos"}</td>
+            <td>${document.getElementById("sedeDashboard").value || "Todas"}</td>
+            <td>${document.getElementById("grupoDashboard").value || "Todos"}</td>
+            <td>${document.getElementById("fechaInicioDashboard").value || ""}</td>
+            <td>${document.getElementById("fechaFinDashboard").value || ""}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  function obtenerNombreDashboard(tipo) {
+    const nombres = {
+      asistencia: "Asistencia",
+      incidencias: "Incidencias",
+      acompanamientos: "Acompañamientos",
+      evaluaciones: "Evaluaciones",
+      ejecutivo: "Vista ejecutiva"
+    };
+
+    return nombres[tipo] || "Dashboard";
+  }
+
+  function cargarDashboardIncidencias() {
+    const mensaje = document.getElementById("mensajeDashboard");
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    limpiarResultadosDashboard();
+
+    const payload = {
+      cedula: usuarioActual.cedula,
+      regional: document.getElementById("regionalDashboard").value,
+      distrito: document.getElementById("distritoDashboard").value,
+      centroSede: document.getElementById("sedeDashboard").value,
+      grupo: document.getElementById("grupoDashboard").value
+    };
+
+    const callbackName = "callbackDashboardIncidencias_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        mostrarDashboardIncidencias(respuesta.incidencias || []);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo cargar el dashboard de incidencias.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=consultarIncidencias"
+      + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function mostrarDashboardIncidencias(incidencias) {
+    const resumen = {
+      total: incidencias.length,
+      registradas: 0,
+      enSeguimiento: 0,
+      resueltas: 0,
+      escaladas: 0,
+      criticas: 0
+    };
+
+    incidencias.forEach(function(i) {
+      const estado = normalizarTexto(i.estado);
+      const gravedad = normalizarTexto(i.gravedad);
+
+      if (estado === "Registrada") resumen.registradas++;
+      if (estado === "En seguimiento") resumen.enSeguimiento++;
+      if (estado === "Resuelta" || estado === "Cerrada") resumen.resueltas++;
+      if (estado === "Escalada") resumen.escaladas++;
+      if (gravedad === "Crítica" || gravedad === "Critica") resumen.criticas++;
+    });
+
+    document.getElementById("resumenDashboard").innerHTML = `
+      <div class="tarjeta-indicador"><span>Total de incidencias</span><strong>${resumen.total}</strong></div>
+      <div class="tarjeta-indicador"><span>Registradas</span><strong>${resumen.registradas}</strong></div>
+      <div class="tarjeta-indicador"><span>En seguimiento</span><strong>${resumen.enSeguimiento}</strong></div>
+      <div class="tarjeta-indicador"><span>Resueltas/Cerradas</span><strong>${resumen.resueltas}</strong></div>
+      <div class="tarjeta-indicador"><span>Escaladas</span><strong>${resumen.escaladas}</strong></div>
+      <div class="tarjeta-indicador"><span>Críticas</span><strong>${resumen.criticas}</strong></div>
+    `;
+
+    const matriz = document.getElementById("dashboardMatrizResultados");
+    matriz.classList.remove("oculto");
+
+    if (!incidencias || incidencias.length === 0) {
+      matriz.innerHTML = "<p>No hay incidencias para los filtros seleccionados.</p>";
+      return;
+    }
+
+    let html = "<table>";
+    html += "<thead><tr>";
+    html += "<th>Código</th><th>Fecha</th><th>Regional</th><th>Distrito</th><th>Centro sede</th><th>Grupo</th><th>Categoría</th><th>Gravedad</th><th>Estado</th>";
+    html += "</tr></thead><tbody>";
+
+    incidencias.forEach(function(i) {
+      html += "<tr>";
+      html += `<td>${i.idIncidencia || ""}</td>`;
+      html += `<td>${i.fechaIncidencia || ""}</td>`;
+      html += `<td>${i.regional || ""}</td>`;
+      html += `<td>${i.distrito || ""}</td>`;
+      html += `<td>${i.centroSede || ""}</td>`;
+      html += `<td>${i.grupo || ""}</td>`;
+      html += `<td>${i.categoria || ""}</td>`;
+      html += `<td>${i.gravedad || ""}</td>`;
+      html += `<td>${i.estado || ""}</td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    matriz.innerHTML = html;
   }
 
   function abrirModuloAcompanamientos() {
@@ -1827,8 +2201,8 @@
           mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
           mensaje.classList.add("error");
         } else {
-          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
-          mensaje.classList.add("ok");
+          mensaje.textContent = "";
+          mensaje.className = "mensaje";
         }
 
         if (esCoordinadorSede()) {
@@ -2434,8 +2808,8 @@
           mensaje.textContent = "No hay sedes disponibles para el usuario actual.";
           mensaje.classList.add("error");
         } else {
-          mensaje.textContent = "Regionales, distritos y sedes cargados correctamente.";
-          mensaje.classList.add("ok");
+          mensaje.textContent = "";
+          mensaje.className = "mensaje";
         }
       } else {
         mensaje.textContent = respuesta.mensaje || "No se pudieron cargar las sedes.";
@@ -2875,14 +3249,13 @@
       return;
     }
 
-    mensaje.textContent = "Cargando dashboard...";
+    mensaje.textContent = "";
 
     const callbackName = "callbackDashboard_" + Date.now();
 
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
-        mensaje.textContent = "Dashboard cargado correctamente.";
-        mensaje.classList.add("ok");
+        document.getElementById("dashboardAsistenciaResultados").classList.remove("oculto");
         mostrarResumenDashboard(respuesta.resumen || {});
         mostrarTablaDashboardFechas(respuesta.porFecha || []);
         mostrarTablaAusenciasRecurrentes(respuesta.ausenciasRecurrentes || []);
@@ -2900,6 +3273,9 @@
       + "?accion=dashboardAsistencia"
       + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
       + "&grupo=" + encodeURIComponent(grupo)
+      + "&regional=" + encodeURIComponent(document.getElementById("regionalDashboard").value)
+      + "&distrito=" + encodeURIComponent(document.getElementById("distritoDashboard").value)
+      + "&centroSede=" + encodeURIComponent(document.getElementById("sedeDashboard").value)
       + "&fechaInicio=" + encodeURIComponent(fechaInicio)
       + "&fechaFin=" + encodeURIComponent(fechaFin)
       + "&callback=" + callbackName;
