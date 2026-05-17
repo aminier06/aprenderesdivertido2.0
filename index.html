@@ -1431,9 +1431,6 @@
         <label for="grupoAcompanamiento">Grupo</label>
         <select id="grupoAcompanamiento">
           <option value="">Seleccione un grupo</option>
-          <option value="EXPLORADORES">EXPLORADORES</option>
-          <option value="CREADORES">CREADORES</option>
-          <option value="INNOVADORES">INNOVADORES</option>
         </select>
       </div>
 
@@ -1678,19 +1675,19 @@
         <div>
           <label for="filtroRegionalAsignacionGrupos">Regional</label>
           <select id="filtroRegionalAsignacionGrupos" onchange="cambiarFiltroRegionalAsignacionGrupos()">
-            <option value="">Todas las regionales</option>
+            <option value="">Todas las regionales permitidas</option>
           </select>
         </div>
         <div>
           <label for="filtroDistritoAsignacionGrupos">Distrito</label>
           <select id="filtroDistritoAsignacionGrupos" onchange="cambiarFiltroDistritoAsignacionGrupos()">
-            <option value="">Todos los distritos</option>
+            <option value="">Todos los distritos permitidos</option>
           </select>
         </div>
         <div>
           <label for="filtroSedeAsignacionGrupos">Centro sede</label>
           <select id="filtroSedeAsignacionGrupos" onchange="filtrosAsignacionGrupos.centroSede=this.value; cargarFacilitadoresSede()">
-            <option value="">Todas las sedes</option>
+            <option value="">Todas las sedes permitidas</option>
           </select>
         </div>
       </div>
@@ -1734,19 +1731,19 @@
         <div>
           <label for="filtroRegionalAsignacionEstudiantes">Regional</label>
           <select id="filtroRegionalAsignacionEstudiantes" onchange="cambiarFiltroRegionalAsignacionEstudiantes()">
-            <option value="">Todas las regionales</option>
+            <option value="">Todas las regionales permitidas</option>
           </select>
         </div>
         <div>
           <label for="filtroDistritoAsignacionEstudiantes">Distrito</label>
           <select id="filtroDistritoAsignacionEstudiantes" onchange="cambiarFiltroDistritoAsignacionEstudiantes()">
-            <option value="">Todos los distritos</option>
+            <option value="">Todos los distritos permitidos</option>
           </select>
         </div>
         <div>
           <label for="filtroSedeAsignacionEstudiantes">Centro sede</label>
           <select id="filtroSedeAsignacionEstudiantes" onchange="filtrosAsignacionEstudiantes.centroSede=this.value; cargarEstudiantesAsignacionGrupos()">
-            <option value="">Todas las sedes</option>
+            <option value="">Todas las sedes permitidas</option>
           </select>
         </div>
       </div>
@@ -1773,7 +1770,7 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxebQYm9DyeO4dwxcM5e2WR6s67wz1aLdtK7WomNhzcnFY4lq875fL3wHpPQD0qXj-uFA/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwbMGHck2LQCfDOH9mCUcDygnlfocIQ6SxYXnapVbewWixxoVfiZ8Mc18ONhQbGeTBZFw/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
@@ -1873,6 +1870,54 @@
       grupos.push("Grupo " + i);
     }
     return grupos;
+  }
+
+  function obtenerGruposDeSedeAcompanamiento() {
+    if (!sedeSeleccionadaAcompanamiento) return [];
+
+    if (Array.isArray(sedeSeleccionadaAcompanamiento.grupos) && sedeSeleccionadaAcompanamiento.grupos.length > 0) {
+      return sedeSeleccionadaAcompanamiento.grupos;
+    }
+
+    const gruposEsperados = Number(sedeSeleccionadaAcompanamiento.gruposEsperados || 0);
+    if (gruposEsperados > 0) {
+      return construirGruposOperativos(gruposEsperados);
+    }
+
+    const cuota = Number(sedeSeleccionadaAcompanamiento.cuota || 0);
+    if (cuota > 0) {
+      return construirGruposOperativos(Math.ceil(cuota / 25));
+    }
+
+    return [];
+  }
+
+  function cargarOpcionesGrupoAcompanamiento(gruposExtra) {
+    const select = document.getElementById("grupoAcompanamiento");
+    if (!select) return;
+
+    const grupos = [];
+    obtenerGruposDeSedeAcompanamiento().forEach(function(g) {
+      if (g && grupos.indexOf(g) === -1) grupos.push(g);
+    });
+
+    (gruposExtra || []).forEach(function(g) {
+      if (g && grupos.indexOf(g) === -1) grupos.push(g);
+    });
+
+    grupos.sort(function(a, b) {
+      const na = Number(String(a).replace(/[^0-9]/g, "")) || 0;
+      const nb = Number(String(b).replace(/[^0-9]/g, "")) || 0;
+      return na - nb || String(a).localeCompare(String(b));
+    });
+
+    select.innerHTML = '<option value="">Seleccione un grupo</option>';
+    grupos.forEach(function(grupo) {
+      const option = document.createElement("option");
+      option.value = grupo;
+      option.textContent = grupo;
+      select.appendChild(option);
+    });
   }
 
   function iniciarSesion() {
@@ -2166,7 +2211,7 @@
 
   function cargarSedesPermitidasAsistencia() {
     const mensaje = document.getElementById("mensajeAsistencia");
-    mensaje.textContent = "Cargando regionales, distritos y sedes...";
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
     mensaje.className = "mensaje";
 
     const callbackName = "callbackSedesAsistencia_" + Date.now();
@@ -3069,7 +3114,7 @@
 
   function cargarSedesPermitidas() {
     const mensaje = document.getElementById("mensajeAcompanamiento");
-    mensaje.textContent = "Cargando regionales, distritos y sedes...";
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
     mensaje.className = "mensaje";
 
     const callbackName = "callbackSedes_" + Date.now();
@@ -3253,6 +3298,7 @@
       <strong>Teléfono:</strong> ${sedeSeleccionadaAcompanamiento.telefono || ""}
     `;
 
+    cargarOpcionesGrupoAcompanamiento();
     cargarPersonasPermitidas();
   }
 
@@ -3267,6 +3313,7 @@
 
     if (tipo === "Facilitador") {
       document.getElementById("bloqueGrupoAcompanamiento").classList.remove("oculto");
+      cargarOpcionesGrupoAcompanamiento();
     } else {
       document.getElementById("bloqueGrupoAcompanamiento").classList.add("oculto");
     }
@@ -3295,6 +3342,11 @@
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
         personasAcompanamiento = respuesta.personas || [];
+
+        if (tipo === "Facilitador") {
+          cargarOpcionesGrupoAcompanamiento(personasAcompanamiento.map(function(p) { return p.grupo || ""; }).filter(Boolean));
+        }
+
         llenarSelectorPersonas(personasAcompanamiento);
 
         mensaje.textContent = "Personal cargado correctamente.";
@@ -3352,6 +3404,9 @@
     if (!personaSeleccionadaAcompanamiento) return;
 
     if (tipo === "Facilitador") {
+      if (personaSeleccionadaAcompanamiento.grupo) {
+        asegurarOpcionGrupo(document.getElementById("grupoAcompanamiento"), personaSeleccionadaAcompanamiento.grupo);
+      }
       document.getElementById("grupoAcompanamiento").value = personaSeleccionadaAcompanamiento.grupo || "";
       construirInstrumentoFacilitador();
     }
@@ -3685,7 +3740,7 @@
 
   function cargarSedesPermitidasIncidencias() {
     const mensaje = document.getElementById("mensajeIncidencia");
-    mensaje.textContent = "Cargando regionales, distritos y sedes...";
+    mensaje.textContent = "Cargando regionales, distritos y sedes permitidas...";
     mensaje.className = "mensaje";
 
     const callbackName = "callbackSedesIncidencias_" + Date.now();
@@ -4782,9 +4837,9 @@
       .filter(function(f) { return !distritoSeleccionado || normalizarTexto(f.distrito) === normalizarTexto(distritoSeleccionado); })
       .map(function(f) { return f.centroSede; }));
 
-    poblarSelectFiltroAsignacion("filtroRegionalAsignacionGrupos", regionales, filtrosAsignacionGrupos.regional, "Todas las regionales");
-    poblarSelectFiltroAsignacion("filtroDistritoAsignacionGrupos", distritos, filtrosAsignacionGrupos.distrito, "Todos los distritos");
-    poblarSelectFiltroAsignacion("filtroSedeAsignacionGrupos", sedes, filtrosAsignacionGrupos.centroSede, "Todas las sedes");
+    poblarSelectFiltroAsignacion("filtroRegionalAsignacionGrupos", regionales, filtrosAsignacionGrupos.regional, "Todas las regionales permitidas");
+    poblarSelectFiltroAsignacion("filtroDistritoAsignacionGrupos", distritos, filtrosAsignacionGrupos.distrito, "Todos los distritos permitidos");
+    poblarSelectFiltroAsignacion("filtroSedeAsignacionGrupos", sedes, filtrosAsignacionGrupos.centroSede, "Todas las sedes permitidas");
   }
 
   function cambiarFiltroRegionalAsignacionGrupos() {
@@ -4823,9 +4878,9 @@
       .filter(function(f) { return !distritoSeleccionado || normalizarTexto(f.distrito) === normalizarTexto(distritoSeleccionado); })
       .map(function(f) { return f.centroSede; }));
 
-    poblarSelectFiltroAsignacion("filtroRegionalAsignacionEstudiantes", regionales, filtrosAsignacionEstudiantes.regional, "Todas las regionales");
-    poblarSelectFiltroAsignacion("filtroDistritoAsignacionEstudiantes", distritos, filtrosAsignacionEstudiantes.distrito, "Todos los distritos");
-    poblarSelectFiltroAsignacion("filtroSedeAsignacionEstudiantes", sedes, filtrosAsignacionEstudiantes.centroSede, "Todas las sedes");
+    poblarSelectFiltroAsignacion("filtroRegionalAsignacionEstudiantes", regionales, filtrosAsignacionEstudiantes.regional, "Todas las regionales permitidas");
+    poblarSelectFiltroAsignacion("filtroDistritoAsignacionEstudiantes", distritos, filtrosAsignacionEstudiantes.distrito, "Todos los distritos permitidos");
+    poblarSelectFiltroAsignacion("filtroSedeAsignacionEstudiantes", sedes, filtrosAsignacionEstudiantes.centroSede, "Todas las sedes permitidas");
   }
 
   function cambiarFiltroRegionalAsignacionEstudiantes() {
