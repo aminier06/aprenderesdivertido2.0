@@ -1119,7 +1119,7 @@
             <path d="M12 13.5v3"></path>
           </svg>
         </div>
-        <h3>Asignación de grupos</h3>
+        <h3>Asignación de facilitadores</h3>
         <p>Asignar dos facilitadores a cada grupo de la sede.</p>
       </div>
 
@@ -1667,7 +1667,7 @@
     <div class="encabezado-modulo">
       <div>
         <h2>Asignación de facilitadores</h2>
-        <p class="nota">Cada grupo debe tener exactamente dos facilitadores.</p>
+        <p class="nota">Cada grupo debe tener exactamente dos facilitadores. Los técnicos pueden consultar; solo el coordinador de sede puede modificar.</p>
       </div>
     </div>
 
@@ -1723,7 +1723,7 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwbMGHck2LQCfDOH9mCUcDygnlfocIQ6SxYXnapVbewWixxoVfiZ8Mc18ONhQbGeTBZFw/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyyZX2JTalObw2p8IIqFFLEM_vAPyrP2zDvp6NSatSmVJr8RwNoUgjL7WcaQNkHp1Htcw/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
@@ -1985,17 +1985,33 @@
   function actualizarVisibilidadAsignacionGrupos(usuario) {
     const tileFacilitadores = document.getElementById("tileAsignacionGrupos");
     const tileEstudiantes = document.getElementById("tileAsignacionEstudiantesGrupos");
-    const esCoordinador = normalizarTexto(usuario && usuario.rol) === "Coordinador sede";
+    const puedeVer = puedeConsultarAsignaciones(usuario);
 
     if (tileFacilitadores) {
-      if (esCoordinador) tileFacilitadores.classList.remove("oculto");
+      if (puedeVer) tileFacilitadores.classList.remove("oculto");
       else tileFacilitadores.classList.add("oculto");
     }
 
     if (tileEstudiantes) {
-      if (esCoordinador) tileEstudiantes.classList.remove("oculto");
+      if (puedeVer) tileEstudiantes.classList.remove("oculto");
       else tileEstudiantes.classList.add("oculto");
     }
+  }
+
+  function puedeConsultarAsignaciones(usuario) {
+    const rol = normalizarTexto(usuario && usuario.rol).toLowerCase();
+    return rol === "coordinador sede" ||
+      rol === "coordinador de sede" ||
+      rol === "técnico nacional" ||
+      rol === "tecnico nacional" ||
+      rol === "técnico regional" ||
+      rol === "tecnico regional" ||
+      rol === "técnico distrital" ||
+      rol === "tecnico distrital";
+  }
+
+  function puedeModificarAsignaciones() {
+    return esCoordinadorSede();
   }
 
   function ocultarDatosUsuarioFlotante() {
@@ -4669,8 +4685,8 @@
       return;
     }
 
-    if (!esCoordinadorSede()) {
-      alert("Este módulo está disponible solo para coordinadores de sede.");
+    if (!puedeConsultarAsignaciones(usuarioActual)) {
+      alert("Este módulo está disponible para coordinadores de sede y técnicos autorizados.");
       return;
     }
 
@@ -4729,6 +4745,11 @@
   function renderizarModuloAsignacionGrupos() {
     if (!datosAsignacionGrupos) return;
 
+    if (datosAsignacionGrupos.modoConsulta) {
+      renderizarConsultaAsignacionFacilitadores();
+      return;
+    }
+
     const sede = datosAsignacionGrupos.sede || {};
     const cuota = Number(datosAsignacionGrupos.cuota || 0);
     const gruposEsperados = Number(datosAsignacionGrupos.gruposEsperados || 0);
@@ -4758,6 +4779,68 @@
 
     document.getElementById("bloqueCuotaManual").classList.add("oculto");
     renderizarTablaAsignacion(datosAsignacionGrupos.grupos || construirGruposOperativos(gruposEsperados));
+  }
+
+  function renderizarConsultaAsignacionFacilitadores() {
+    const facilitadores = datosAsignacionGrupos.facilitadores || [];
+    const total = facilitadores.length;
+    const asignados = facilitadores.filter(function(f) { return normalizarTexto(f.grupoActual); }).length;
+    const sinAsignar = total - asignados;
+
+    document.getElementById("bloqueCuotaManual").classList.add("oculto");
+    document.getElementById("btnGuardarAsignacionGrupos").classList.add("oculto");
+    document.getElementById("alertaAsignacionGrupos").classList.add("oculto");
+
+    document.getElementById("resumenAsignacionGrupos").innerHTML = `
+      <div class="dato-asignacion"><span>Alcance</span><strong>${escapeHtml(usuarioActual.rol || "")}</strong></div>
+      <div class="dato-asignacion"><span>Regional</span><strong>${escapeHtml(usuarioActual.regional || "Todas")}</strong></div>
+      <div class="dato-asignacion"><span>Distrito</span><strong>${escapeHtml(usuarioActual.distrito || "Todos")}</strong></div>
+      <div class="dato-asignacion"><span>Facilitadores</span><strong>${total}</strong></div>
+      <div class="dato-asignacion"><span>Con grupo</span><strong>${asignados}</strong></div>
+      <div class="dato-asignacion"><span>Sin grupo</span><strong>${sinAsignar}</strong></div>
+    `;
+
+    const tabla = document.getElementById("tablaAsignacionGrupos");
+
+    if (!facilitadores.length) {
+      tabla.classList.add("oculto");
+      const alerta = document.getElementById("alertaAsignacionGrupos");
+      alerta.classList.remove("oculto");
+      alerta.textContent = "No hay facilitadores activos dentro del alcance de consulta de este usuario.";
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Regional</th>
+            <th>Distrito</th>
+            <th>Centro sede</th>
+            <th>Grupo</th>
+            <th>Facilitador</th>
+            <th>Cédula</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    facilitadores.forEach(function(f) {
+      html += `
+        <tr>
+          <td>${escapeHtml(f.regional || "")}</td>
+          <td>${escapeHtml(f.distrito || "")}</td>
+          <td>${escapeHtml(f.centroSede || "")}</td>
+          <td>${escapeHtml(f.grupoActual || "Sin asignar")}</td>
+          <td>${escapeHtml(f.nombre || "")}</td>
+          <td>${escapeHtml(f.cedula || "")}</td>
+        </tr>
+      `;
+    });
+
+    html += "</tbody></table>";
+    tabla.innerHTML = html;
+    tabla.classList.remove("oculto");
   }
 
   function recalcularAsignacionConCuota() {
@@ -4870,7 +4953,12 @@
       select.addEventListener("change", actualizarEstadoVisualAsignacion);
     });
 
-    document.getElementById("btnGuardarAsignacionGrupos").classList.remove("oculto");
+    if (puedeModificarAsignaciones()) {
+      document.getElementById("btnGuardarAsignacionGrupos").classList.remove("oculto");
+    } else {
+      document.getElementById("btnGuardarAsignacionGrupos").classList.add("oculto");
+      document.querySelectorAll(".select-asignacion-grupo").forEach(function(select) { select.disabled = true; });
+    }
     actualizarEstadoVisualAsignacion();
   }
 
@@ -4894,6 +4982,11 @@
 
   function guardarAsignacionGrupos() {
     const mensaje = document.getElementById("mensajeAsignacionGrupos");
+    if (!puedeModificarAsignaciones()) {
+      mensaje.textContent = "Este usuario solo tiene permiso de consulta. La modificación corresponde al coordinador de sede.";
+      mensaje.className = "mensaje error";
+      return;
+    }
     mensaje.textContent = "";
     mensaje.className = "mensaje";
 
@@ -4983,8 +5076,8 @@
       return;
     }
 
-    if (!esCoordinadorSede()) {
-      alert("Este módulo está disponible solo para coordinadores de sede.");
+    if (!puedeConsultarAsignaciones(usuarioActual)) {
+      alert("Este módulo está disponible para coordinadores de sede y técnicos autorizados.");
       return;
     }
 
@@ -5046,6 +5139,11 @@
   function renderizarModuloAsignacionEstudiantesGrupos() {
     if (!datosAsignacionEstudiantesGrupos) return;
 
+    if (datosAsignacionEstudiantesGrupos.modoConsulta) {
+      renderizarConsultaAsignacionEstudiantes();
+      return;
+    }
+
     const sede = datosAsignacionEstudiantesGrupos.sede || {};
     const grupos = datosAsignacionEstudiantesGrupos.grupos || [];
     const estudiantes = datosAsignacionEstudiantesGrupos.estudiantes || [];
@@ -5084,6 +5182,71 @@
 
     document.getElementById("alertaAsignacionEstudiantesGrupos").classList.add("oculto");
     renderizarTablaAsignacionEstudiantes(grupos, estudiantes);
+  }
+
+  function renderizarConsultaAsignacionEstudiantes() {
+    const estudiantes = datosAsignacionEstudiantesGrupos.estudiantes || [];
+    const total = estudiantes.length;
+    const asignados = estudiantes.filter(function(e) { return normalizarTexto(e.grupo); }).length;
+    const sinAsignar = total - asignados;
+
+    document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.add("oculto");
+    document.getElementById("alertaAsignacionEstudiantesGrupos").classList.add("oculto");
+
+    document.getElementById("resumenAsignacionEstudiantesGrupos").innerHTML = `
+      <div class="dato-asignacion"><span>Alcance</span><strong>${escapeHtml(usuarioActual.rol || "")}</strong></div>
+      <div class="dato-asignacion"><span>Regional</span><strong>${escapeHtml(usuarioActual.regional || "Todas")}</strong></div>
+      <div class="dato-asignacion"><span>Distrito</span><strong>${escapeHtml(usuarioActual.distrito || "Todos")}</strong></div>
+      <div class="dato-asignacion"><span>Estudiantes</span><strong>${total}</strong></div>
+      <div class="dato-asignacion"><span>Con grupo</span><strong>${asignados}</strong></div>
+      <div class="dato-asignacion"><span>Sin grupo</span><strong>${sinAsignar}</strong></div>
+    `;
+
+    const tabla = document.getElementById("tablaAsignacionEstudiantesGrupos");
+
+    if (!estudiantes.length) {
+      tabla.classList.add("oculto");
+      const alerta = document.getElementById("alertaAsignacionEstudiantesGrupos");
+      alerta.classList.remove("oculto");
+      alerta.textContent = "No hay estudiantes activos dentro del alcance de consulta de este usuario.";
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Regional</th>
+            <th>Distrito</th>
+            <th>Centro sede</th>
+            <th>Estudiante</th>
+            <th>Grado</th>
+            <th>Nivel Lengua</th>
+            <th>Nivel Matemática</th>
+            <th>Grupo</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    estudiantes.forEach(function(e) {
+      html += `
+        <tr>
+          <td>${escapeHtml(e.regional || "")}</td>
+          <td>${escapeHtml(e.distrito || "")}</td>
+          <td>${escapeHtml(e.centroSede || "")}</td>
+          <td><strong>${escapeHtml(e.nombre || "")}</strong><span class="texto-pequeno">ID: ${escapeHtml(e.idEstudiante || "")}</span></td>
+          <td>${escapeHtml(e.grado || "")}</td>
+          <td><span class="nivel-estudiante">${escapeHtml(e.nivelLengua || "Sin dato")}</span></td>
+          <td><span class="nivel-estudiante">${escapeHtml(e.nivelMat || "Sin dato")}</span></td>
+          <td>${escapeHtml(e.grupo || "Sin asignar")}</td>
+        </tr>
+      `;
+    });
+
+    html += "</tbody></table>";
+    tabla.innerHTML = html;
+    tabla.classList.remove("oculto");
   }
 
   function renderizarTablaAsignacionEstudiantes(grupos, estudiantes) {
@@ -5141,7 +5304,12 @@
       select.addEventListener("change", actualizarResumenVisualAsignacionEstudiantes);
     });
 
-    document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.remove("oculto");
+    if (puedeModificarAsignaciones()) {
+      document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.remove("oculto");
+    } else {
+      document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.add("oculto");
+      document.querySelectorAll(".select-asignacion-estudiante").forEach(function(select) { select.disabled = true; });
+    }
     actualizarResumenVisualAsignacionEstudiantes();
   }
 
@@ -5159,6 +5327,11 @@
 
   function guardarAsignacionEstudiantesGrupos() {
     const mensaje = document.getElementById("mensajeAsignacionEstudiantesGrupos");
+    if (!puedeModificarAsignaciones()) {
+      mensaje.textContent = "Este usuario solo tiene permiso de consulta. La modificación corresponde al coordinador de sede.";
+      mensaje.className = "mensaje error";
+      return;
+    }
     mensaje.textContent = "";
     mensaje.className = "mensaje";
 
