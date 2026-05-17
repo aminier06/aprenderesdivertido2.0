@@ -4665,6 +4665,9 @@
 
   function consultarAsistenciaGrupo() {
     const grupo = document.getElementById("grupoAsistencia").value;
+    const regionalSeleccionada = document.getElementById("regionalAsistencia").value;
+    const distritoSeleccionado = document.getElementById("distritoAsistencia").value;
+    const centroSeleccionado = document.getElementById("sedeAsistencia").value;
     const mensaje = document.getElementById("mensajeAsistencia");
     const contenedor = document.getElementById("consultaAsistencia");
     const tabla = document.getElementById("tablaAsistenciaGrupo");
