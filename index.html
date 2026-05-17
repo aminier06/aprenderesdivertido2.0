@@ -1773,7 +1773,7 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby0uv-220b_jjUar1MBFFIZKAPdodJcsCk4UZqmrze8A5YPtyhJf2P-gJqPT1Vi-Ab8Sg/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwbMGHck2LQCfDOH9mCUcDygnlfocIQ6SxYXnapVbewWixxoVfiZ8Mc18ONhQbGeTBZFw/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
@@ -4966,9 +4966,6 @@
     document.getElementById("alertaAsignacionGrupos").classList.add("oculto");
 
     document.getElementById("resumenAsignacionGrupos").innerHTML = `
-      <div class="dato-asignacion"><span>Alcance</span><strong>${escapeHtml(usuarioActual.rol || "")}</strong></div>
-      <div class="dato-asignacion"><span>Regional</span><strong>${escapeHtml(usuarioActual.regional || "Todas")}</strong></div>
-      <div class="dato-asignacion"><span>Distrito</span><strong>${escapeHtml(usuarioActual.distrito || "Todos")}</strong></div>
       <div class="dato-asignacion"><span>Facilitadores</span><strong>${total}</strong></div>
       <div class="dato-asignacion"><span>Con grupo</span><strong>${asignados}</strong></div>
       <div class="dato-asignacion"><span>Sin grupo</span><strong>${sinAsignar}</strong></div>
