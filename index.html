@@ -1671,6 +1671,31 @@
       </div>
     </div>
 
+    <div id="bloqueFiltrosAsignacionGrupos" class="bloque-formulario oculto">
+      <h3>Filtros de consulta</h3>
+      <p class="nota">Seleccione regional, distrito o sede para consultar las asignaciones dentro de su alcance.</p>
+      <div class="form-grid-3">
+        <div>
+          <label for="filtroRegionalAsignacionGrupos">Regional</label>
+          <select id="filtroRegionalAsignacionGrupos" onchange="cambiarFiltroRegionalAsignacionGrupos()">
+            <option value="">Todas las regionales permitidas</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtroDistritoAsignacionGrupos">Distrito</label>
+          <select id="filtroDistritoAsignacionGrupos" onchange="cambiarFiltroDistritoAsignacionGrupos()">
+            <option value="">Todos los distritos permitidos</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtroSedeAsignacionGrupos">Centro sede</label>
+          <select id="filtroSedeAsignacionGrupos" onchange="filtrosAsignacionGrupos.centroSede=this.value; cargarFacilitadoresSede()">
+            <option value="">Todas las sedes permitidas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <div id="resumenAsignacionGrupos" class="resumen-asignacion"></div>
 
     <div id="bloqueCuotaManual" class="bloque-formulario oculto">
@@ -1702,6 +1727,31 @@
       </div>
     </div>
 
+    <div id="bloqueFiltrosAsignacionEstudiantes" class="bloque-formulario oculto">
+      <h3>Filtros de consulta</h3>
+      <p class="nota">Seleccione regional, distrito o sede para consultar los estudiantes dentro de su alcance.</p>
+      <div class="form-grid-3">
+        <div>
+          <label for="filtroRegionalAsignacionEstudiantes">Regional</label>
+          <select id="filtroRegionalAsignacionEstudiantes" onchange="cambiarFiltroRegionalAsignacionEstudiantes()">
+            <option value="">Todas las regionales permitidas</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtroDistritoAsignacionEstudiantes">Distrito</label>
+          <select id="filtroDistritoAsignacionEstudiantes" onchange="cambiarFiltroDistritoAsignacionEstudiantes()">
+            <option value="">Todos los distritos permitidos</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtroSedeAsignacionEstudiantes">Centro sede</label>
+          <select id="filtroSedeAsignacionEstudiantes" onchange="filtrosAsignacionEstudiantes.centroSede=this.value; cargarEstudiantesAsignacionGrupos()">
+            <option value="">Todas las sedes permitidas</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <div id="resumenAsignacionEstudiantesGrupos" class="resumen-asignacion"></div>
     <div id="alertaAsignacionEstudiantesGrupos" class="alerta-asignacion oculto"></div>
     <div id="tablaAsignacionEstudiantesGrupos" class="tabla-contenedor tabla-asignacion oculto"></div>
@@ -1723,7 +1773,7 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyyZX2JTalObw2p8IIqFFLEM_vAPyrP2zDvp6NSatSmVJr8RwNoUgjL7WcaQNkHp1Htcw/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycby0uv-220b_jjUar1MBFFIZKAPdodJcsCk4UZqmrze8A5YPtyhJf2P-gJqPT1Vi-Ab8Sg/exec";
 
   let usuarioActual = null;
   let estudiantesActuales = [];
@@ -1742,6 +1792,8 @@
   let modoIncidenciaActual = "consulta";
   let datosAsignacionGrupos = null;
   let datosAsignacionEstudiantesGrupos = null;
+  let filtrosAsignacionGrupos = { regional: "", distrito: "", centroSede: "" };
+  let filtrosAsignacionEstudiantes = { regional: "", distrito: "", centroSede: "" };
 
   const itemsCoordinador = [
     ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
@@ -4679,6 +4731,116 @@
   }
 
 
+
+  function modoConsultaAsignaciones() {
+    return puedeConsultarAsignaciones(usuarioActual) && !puedeModificarAsignaciones();
+  }
+
+  function valoresUnicosOrdenados(lista) {
+    return Array.from(new Set((lista || []).filter(function(v) { return normalizarTexto(v); }))).sort(function(a, b) {
+      return String(a).localeCompare(String(b));
+    });
+  }
+
+  function poblarSelectFiltroAsignacion(idSelect, opciones, valorActual, textoTodos) {
+    const select = document.getElementById(idSelect);
+    if (!select) return;
+
+    const valor = normalizarTexto(valorActual);
+    select.innerHTML = `<option value="">${textoTodos}</option>`;
+
+    opciones.forEach(function(opcion) {
+      const option = document.createElement("option");
+      option.value = opcion;
+      option.textContent = opcion;
+      select.appendChild(option);
+    });
+
+    select.value = opciones.indexOf(valor) !== -1 ? valor : "";
+  }
+
+  function actualizarFiltrosAsignacionGrupos() {
+    const bloque = document.getElementById("bloqueFiltrosAsignacionGrupos");
+    if (!bloque) return;
+
+    if (!modoConsultaAsignaciones()) {
+      bloque.classList.add("oculto");
+      return;
+    }
+
+    bloque.classList.remove("oculto");
+    const filtros = (datosAsignacionGrupos && datosAsignacionGrupos.filtros) || [];
+    const regionalSeleccionada = filtrosAsignacionGrupos.regional || "";
+    const distritoSeleccionado = filtrosAsignacionGrupos.distrito || "";
+
+    const regionales = valoresUnicosOrdenados(filtros.map(function(f) { return f.regional; }));
+    const distritos = valoresUnicosOrdenados(filtros
+      .filter(function(f) { return !regionalSeleccionada || normalizarTexto(f.regional) === normalizarTexto(regionalSeleccionada); })
+      .map(function(f) { return f.distrito; }));
+    const sedes = valoresUnicosOrdenados(filtros
+      .filter(function(f) { return !regionalSeleccionada || normalizarTexto(f.regional) === normalizarTexto(regionalSeleccionada); })
+      .filter(function(f) { return !distritoSeleccionado || normalizarTexto(f.distrito) === normalizarTexto(distritoSeleccionado); })
+      .map(function(f) { return f.centroSede; }));
+
+    poblarSelectFiltroAsignacion("filtroRegionalAsignacionGrupos", regionales, filtrosAsignacionGrupos.regional, "Todas las regionales permitidas");
+    poblarSelectFiltroAsignacion("filtroDistritoAsignacionGrupos", distritos, filtrosAsignacionGrupos.distrito, "Todos los distritos permitidos");
+    poblarSelectFiltroAsignacion("filtroSedeAsignacionGrupos", sedes, filtrosAsignacionGrupos.centroSede, "Todas las sedes permitidas");
+  }
+
+  function cambiarFiltroRegionalAsignacionGrupos() {
+    filtrosAsignacionGrupos.regional = document.getElementById("filtroRegionalAsignacionGrupos").value;
+    filtrosAsignacionGrupos.distrito = "";
+    filtrosAsignacionGrupos.centroSede = "";
+    cargarFacilitadoresSede();
+  }
+
+  function cambiarFiltroDistritoAsignacionGrupos() {
+    filtrosAsignacionGrupos.distrito = document.getElementById("filtroDistritoAsignacionGrupos").value;
+    filtrosAsignacionGrupos.centroSede = "";
+    cargarFacilitadoresSede();
+  }
+
+  function actualizarFiltrosAsignacionEstudiantes() {
+    const bloque = document.getElementById("bloqueFiltrosAsignacionEstudiantes");
+    if (!bloque) return;
+
+    if (!modoConsultaAsignaciones()) {
+      bloque.classList.add("oculto");
+      return;
+    }
+
+    bloque.classList.remove("oculto");
+    const filtros = (datosAsignacionEstudiantesGrupos && datosAsignacionEstudiantesGrupos.filtros) || [];
+    const regionalSeleccionada = filtrosAsignacionEstudiantes.regional || "";
+    const distritoSeleccionado = filtrosAsignacionEstudiantes.distrito || "";
+
+    const regionales = valoresUnicosOrdenados(filtros.map(function(f) { return f.regional; }));
+    const distritos = valoresUnicosOrdenados(filtros
+      .filter(function(f) { return !regionalSeleccionada || normalizarTexto(f.regional) === normalizarTexto(regionalSeleccionada); })
+      .map(function(f) { return f.distrito; }));
+    const sedes = valoresUnicosOrdenados(filtros
+      .filter(function(f) { return !regionalSeleccionada || normalizarTexto(f.regional) === normalizarTexto(regionalSeleccionada); })
+      .filter(function(f) { return !distritoSeleccionado || normalizarTexto(f.distrito) === normalizarTexto(distritoSeleccionado); })
+      .map(function(f) { return f.centroSede; }));
+
+    poblarSelectFiltroAsignacion("filtroRegionalAsignacionEstudiantes", regionales, filtrosAsignacionEstudiantes.regional, "Todas las regionales permitidas");
+    poblarSelectFiltroAsignacion("filtroDistritoAsignacionEstudiantes", distritos, filtrosAsignacionEstudiantes.distrito, "Todos los distritos permitidos");
+    poblarSelectFiltroAsignacion("filtroSedeAsignacionEstudiantes", sedes, filtrosAsignacionEstudiantes.centroSede, "Todas las sedes permitidas");
+  }
+
+  function cambiarFiltroRegionalAsignacionEstudiantes() {
+    filtrosAsignacionEstudiantes.regional = document.getElementById("filtroRegionalAsignacionEstudiantes").value;
+    filtrosAsignacionEstudiantes.distrito = "";
+    filtrosAsignacionEstudiantes.centroSede = "";
+    cargarEstudiantesAsignacionGrupos();
+  }
+
+  function cambiarFiltroDistritoAsignacionEstudiantes() {
+    filtrosAsignacionEstudiantes.distrito = document.getElementById("filtroDistritoAsignacionEstudiantes").value;
+    filtrosAsignacionEstudiantes.centroSede = "";
+    cargarEstudiantesAsignacionGrupos();
+  }
+
   function abrirModuloAsignacionGrupos() {
     if (!usuarioActual) {
       alert("Debe iniciar sesión.");
@@ -4698,6 +4860,9 @@
     document.getElementById("moduloAsignacionGrupos").classList.remove("oculto");
 
     datosAsignacionGrupos = null;
+    filtrosAsignacionGrupos = { regional: "", distrito: "", centroSede: "" };
+    const bloqueFiltrosFac = document.getElementById("bloqueFiltrosAsignacionGrupos");
+    if (bloqueFiltrosFac) bloqueFiltrosFac.classList.toggle("oculto", !modoConsultaAsignaciones());
     document.getElementById("resumenAsignacionGrupos").innerHTML = "";
     document.getElementById("tablaAsignacionGrupos").innerHTML = "";
     document.getElementById("tablaAsignacionGrupos").classList.add("oculto");
@@ -4734,9 +4899,17 @@
     };
 
     const script = document.createElement("script");
-    script.src = URL_SCRIPT
+    let url = URL_SCRIPT
       + "?accion=facilitadoresSede"
-      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula);
+
+    if (modoConsultaAsignaciones()) {
+      url += "&filtroRegional=" + encodeURIComponent(filtrosAsignacionGrupos.regional || "")
+        + "&filtroDistrito=" + encodeURIComponent(filtrosAsignacionGrupos.distrito || "")
+        + "&filtroCentroSede=" + encodeURIComponent(filtrosAsignacionGrupos.centroSede || "");
+    }
+
+    script.src = url
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -4788,6 +4961,7 @@
     const sinAsignar = total - asignados;
 
     document.getElementById("bloqueCuotaManual").classList.add("oculto");
+    actualizarFiltrosAsignacionGrupos();
     document.getElementById("btnGuardarAsignacionGrupos").classList.add("oculto");
     document.getElementById("alertaAsignacionGrupos").classList.add("oculto");
 
@@ -5091,6 +5265,9 @@
     document.getElementById("moduloAsignacionEstudiantesGrupos").classList.remove("oculto");
 
     datosAsignacionEstudiantesGrupos = null;
+    filtrosAsignacionEstudiantes = { regional: "", distrito: "", centroSede: "" };
+    const bloqueFiltrosEst = document.getElementById("bloqueFiltrosAsignacionEstudiantes");
+    if (bloqueFiltrosEst) bloqueFiltrosEst.classList.toggle("oculto", !modoConsultaAsignaciones());
     document.getElementById("resumenAsignacionEstudiantesGrupos").innerHTML = "";
     document.getElementById("tablaAsignacionEstudiantesGrupos").innerHTML = "";
     document.getElementById("tablaAsignacionEstudiantesGrupos").classList.add("oculto");
@@ -5128,9 +5305,17 @@
     };
 
     const script = document.createElement("script");
-    script.src = URL_SCRIPT
+    let url = URL_SCRIPT
       + "?accion=estudiantesAsignacionGrupos"
-      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula);
+
+    if (modoConsultaAsignaciones()) {
+      url += "&filtroRegional=" + encodeURIComponent(filtrosAsignacionEstudiantes.regional || "")
+        + "&filtroDistrito=" + encodeURIComponent(filtrosAsignacionEstudiantes.distrito || "")
+        + "&filtroCentroSede=" + encodeURIComponent(filtrosAsignacionEstudiantes.centroSede || "");
+    }
+
+    script.src = url
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -5190,6 +5375,7 @@
     const asignados = estudiantes.filter(function(e) { return normalizarTexto(e.grupo); }).length;
     const sinAsignar = total - asignados;
 
+    actualizarFiltrosAsignacionEstudiantes();
     document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.add("oculto");
     document.getElementById("alertaAsignacionEstudiantesGrupos").classList.add("oculto");
 
