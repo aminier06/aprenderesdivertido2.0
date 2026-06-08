@@ -2611,6 +2611,8 @@
 
     panelAdmin.classList.remove("oculto");
 
+    // Restaurar el selector de rol desde la vista activa (usuarioActual puede ser
+    // el rol simulado o el real; ambos casos son correctos aquí).
     const rolSelect = document.getElementById("adminVistaRol");
     if (rolSelect && usuarioActual && usuarioActual.rol) {
       rolSelect.value = usuarioActual.rol;
@@ -2618,6 +2620,34 @@
 
     cambiarRolVistaAdministrador();
     cargarSedesModoAdministrador();
+  }
+
+  // Restaura los selectores de regional/distrito/sede/grupo a los valores de
+  // la vista actualmente aplicada (usuarioActual).
+  function restaurarSelectoresVista() {
+    const regional   = document.getElementById("adminVistaRegional");
+    const distrito   = document.getElementById("adminVistaDistrito");
+    const sede       = document.getElementById("adminVistaSede");
+    const grupo      = document.getElementById("adminVistaGrupo");
+
+    if (regional && usuarioActual.regional)   regional.value   = usuarioActual.regional;
+    if (distrito && usuarioActual.distrito)   distrito.value   = usuarioActual.distrito;
+    if (sede     && usuarioActual.centroSede) sede.value       = usuarioActual.centroSede;
+    if (grupo    && usuarioActual.grupo)      grupo.value      = usuarioActual.grupo;
+
+    // Indicador visual de vista activa
+    const vistaActiva = localStorage.getItem("usuarioCampamentoVista");
+    const mensaje = document.getElementById("mensajeVistaAdministrador");
+    if (mensaje && vistaActiva) {
+      const v = JSON.parse(vistaActiva);
+      const partes = [v.rol];
+      if (v.regional)   partes.push(v.regional);
+      if (v.distrito)   partes.push(v.distrito);
+      if (v.centroSede) partes.push(v.centroSede);
+      if (v.grupo)      partes.push(v.grupo);
+      mensaje.textContent = "Vista activa: " + partes.join(" › ");
+      mensaje.className = "mensaje ok";
+    }
   }
 
   function cargarSedesModoAdministrador() {
@@ -2675,7 +2705,16 @@
       selectRegional.appendChild(option);
     });
 
-    if (valorActual) selectRegional.value = valorActual;
+    // Prioridad: si hay una vista activa guardada, restaurar ese valor;
+    // si no, restaurar el valor que tenía antes de recargar la lista.
+    const vistaGuardada = localStorage.getItem("usuarioCampamentoVista");
+    if (vistaGuardada) {
+      const v = JSON.parse(vistaGuardada);
+      if (v.regional) selectRegional.value = v.regional;
+      else if (valorActual) selectRegional.value = valorActual;
+    } else if (valorActual) {
+      selectRegional.value = valorActual;
+    }
     cargarDistritosVistaAdministrador();
   }
 
@@ -2714,7 +2753,15 @@
       selectDistrito.appendChild(option);
     });
 
-    if (valorActual) selectDistrito.value = valorActual;
+    // Restaurar distrito desde la vista activa guardada o el valor previo
+    const _vistaD = localStorage.getItem("usuarioCampamentoVista");
+    if (_vistaD) {
+      const vd = JSON.parse(_vistaD);
+      if (vd.distrito) selectDistrito.value = vd.distrito;
+      else if (valorActual) selectDistrito.value = valorActual;
+    } else if (valorActual) {
+      selectDistrito.value = valorActual;
+    }
     cargarSedesVistaAdministrador();
   }
 
@@ -2741,7 +2788,18 @@
       selectSede.appendChild(option);
     });
 
-    if (valorActual) selectSede.value = valorActual;
+    // Restaurar sede desde la vista activa guardada o el valor previo
+    const _vistaS = localStorage.getItem("usuarioCampamentoVista");
+    if (_vistaS) {
+      const vs = JSON.parse(_vistaS);
+      if (vs.centroSede) selectSede.value = vs.centroSede;
+      else if (valorActual) selectSede.value = valorActual;
+    } else if (valorActual) {
+      selectSede.value = valorActual;
+    }
+
+    // Mostrar indicador de vista activa si corresponde
+    if (typeof restaurarSelectoresVista === "function") restaurarSelectoresVista();
   }
 
   function aplicarVistaAdministrador() {
@@ -2788,9 +2846,34 @@
 
     localStorage.setItem("usuarioCampamentoVista", JSON.stringify(usuarioActual));
 
-    mensaje.textContent = "Vista aplicada correctamente.";
-    mensaje.className = "mensaje ok";
+    // Cerrar todos los módulos abiertos para que se recarguen con el nuevo contexto
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
+    const _ma = document.getElementById("moduloAsignacionGrupos");
+    if (_ma) _ma.classList.add("oculto");
+    const _mae = document.getElementById("moduloAsignacionEstudiantesGrupos");
+    if (_mae) _mae.classList.add("oculto");
+
+    // Limpiar caches de sedes de cada módulo para forzar recarga con el nuevo rol
+    sedesAsistencia = [];
+    sedeSeleccionadaAsistencia = null;
+    sedesAcompanamiento = [];
+    personasAcompanamiento = [];
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+    sedesDashboard = [];
+    sedeSeleccionadaDashboard = null;
+    dashboardActual = "";
+    graficosDashboard = {};
+    sedesIncidencias = [];
+    sedeSeleccionadaIncidencia = null;
+    datosAsignacionGrupos = null;
+    datosAsignacionEstudiantesGrupos = null;
+
     mostrarDatosUsuario(usuarioActual);
+    restaurarSelectoresVista();
   }
 
   function restablecerVistaAdministrador() {
@@ -2800,6 +2883,31 @@
     localStorage.removeItem("usuarioCampamentoVista");
     localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
 
+    // Cerrar módulos y limpiar cachés para que se recarguen con el rol real
+    document.getElementById("moduloAsistencia").classList.add("oculto");
+    document.getElementById("moduloDashboard").classList.add("oculto");
+    document.getElementById("moduloAcompanamientos").classList.add("oculto");
+    document.getElementById("moduloIncidencias").classList.add("oculto");
+    const _ma2 = document.getElementById("moduloAsignacionGrupos");
+    if (_ma2) _ma2.classList.add("oculto");
+    const _mae2 = document.getElementById("moduloAsignacionEstudiantesGrupos");
+    if (_mae2) _mae2.classList.add("oculto");
+
+    sedesAsistencia = [];
+    sedeSeleccionadaAsistencia = null;
+    sedesAcompanamiento = [];
+    personasAcompanamiento = [];
+    sedeSeleccionadaAcompanamiento = null;
+    personaSeleccionadaAcompanamiento = null;
+    sedesDashboard = [];
+    sedeSeleccionadaDashboard = null;
+    dashboardActual = "";
+    graficosDashboard = {};
+    sedesIncidencias = [];
+    sedeSeleccionadaIncidencia = null;
+    datosAsignacionGrupos = null;
+    datosAsignacionEstudiantesGrupos = null;
+
     const mensaje = document.getElementById("mensajeVistaAdministrador");
     if (mensaje) {
       mensaje.textContent = "Vista de administrador restablecida.";
@@ -2807,6 +2915,11 @@
     }
 
     mostrarDatosUsuario(usuarioActual);
+
+    // Resetear los selectores al estado de administrador sin vista
+    const rolSelect = document.getElementById("adminVistaRol");
+    if (rolSelect) rolSelect.value = usuarioSesion.rol || "Administrador";
+    cambiarRolVistaAdministrador();
   }
 
 
