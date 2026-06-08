@@ -5615,8 +5615,13 @@
 
 
 
+  // Devuelve true si el administrador tiene activa una vista de otro rol
+  function esModoVistaSimulada() {
+    return esAdministradorReal() && !!localStorage.getItem("usuarioCampamentoVista") && !esAdministrador();
+  }
+
   function modoConsultaAsignaciones() {
-    return puedeConsultarAsignaciones(usuarioActual) && !puedeModificarAsignaciones();
+    return (puedeConsultarAsignaciones(usuarioActual) && !puedeModificarAsignaciones()) || esModoVistaSimulada();
   }
 
   function valoresUnicosOrdenados(lista) {
@@ -5811,7 +5816,7 @@
   function renderizarModuloAsignacionGrupos() {
     if (!datosAsignacionGrupos) return;
 
-    if (datosAsignacionGrupos.modoConsulta) {
+    if (datosAsignacionGrupos.modoConsulta || modoConsultaAsignaciones()) {
       renderizarConsultaAsignacionFacilitadores();
       return;
     }
@@ -6224,7 +6229,7 @@
   function renderizarModuloAsignacionEstudiantesGrupos() {
     if (!datosAsignacionEstudiantesGrupos) return;
 
-    if (datosAsignacionEstudiantesGrupos.modoConsulta) {
+    if (datosAsignacionEstudiantesGrupos.modoConsulta || modoConsultaAsignaciones()) {
       renderizarConsultaAsignacionEstudiantes();
       return;
     }
