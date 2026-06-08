@@ -1421,6 +1421,64 @@
 
     <div class="datos-usuario" id="datosUsuario"></div>
 
+    <div id="panelAdministrador" class="bloque-formulario oculto">
+      <h3>Modo administrador</h3>
+      <p class="nota">Esta opción permite visualizar la plataforma como otro rol sin modificar el rol real del usuario administrador.</p>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="adminVistaRol">Ver como</label>
+          <select id="adminVistaRol" onchange="cambiarRolVistaAdministrador()">
+            <option value="Administrador">Administrador</option>
+            <option value="Director nacional">Director nacional</option>
+            <option value="Técnico nacional">Técnico nacional</option>
+            <option value="Técnico regional">Técnico regional</option>
+            <option value="Técnico distrital">Técnico distrital</option>
+            <option value="Coordinador sede">Coordinador sede</option>
+            <option value="Facilitador">Facilitador</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="adminVistaRegional">Regional</label>
+          <select id="adminVistaRegional" onchange="cargarDistritosVistaAdministrador()">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="adminVistaDistrito">Distrito</label>
+          <select id="adminVistaDistrito" onchange="cargarSedesVistaAdministrador()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div>
+          <label for="adminVistaSede">Centro sede</label>
+          <select id="adminVistaSede">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="adminVistaGrupo">Grupo</label>
+          <select id="adminVistaGrupo">
+            <option value="">Todos</option>
+            <option value="EXPLORADORES">EXPLORADORES</option>
+            <option value="CREADORES">CREADORES</option>
+            <option value="INNOVADORES">INNOVADORES</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" onclick="aplicarVistaAdministrador()">Aplicar vista</button>
+      <button type="button" class="btn-secundario" onclick="restablecerVistaAdministrador()">Restablecer administrador</button>
+
+      <div id="mensajeVistaAdministrador" class="mensaje"></div>
+    </div>
+
     <div class="grid">
       <div class="modulo modulo-asistencia" onclick="abrirModulo('asistencia')">
         <div class="icono-modulo" aria-hidden="true">
@@ -2118,9 +2176,11 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzqXGV7PhXjdJexJmIXqVusYvSwvK1J6iDnBbegVxbku1-ik_eME3CN1fd1O2jj0H7Jug/exec";
+  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyTUdiPedOjrd6dYq3uYq_cEf6GMsEr0ysptFGHyLhPs7zakdTUhBNBdFMbPJggEVMWGQ/exec";
 
   let usuarioActual = null;
+  let usuarioSesion = null;
+  let sedesModoAdministrador = [];
   let estudiantesActuales = [];
   let sedesAsistencia = [];
   let sedeSeleccionadaAsistencia = null;
@@ -2171,9 +2231,11 @@
 
   window.onload = function() {
     const usuarioGuardado = localStorage.getItem("usuarioCampamento");
+    const vistaGuardada = localStorage.getItem("usuarioCampamentoVista");
 
     if (usuarioGuardado) {
-      usuarioActual = JSON.parse(usuarioGuardado);
+      usuarioSesion = JSON.parse(usuarioGuardado);
+      usuarioActual = vistaGuardada ? JSON.parse(vistaGuardada) : Object.assign({}, usuarioSesion);
 
       document.getElementById("login").classList.add("oculto");
       document.getElementById("cambioPassword").classList.add("oculto");
@@ -2187,12 +2249,72 @@
     return String(valor || "").trim();
   }
 
+
+  function normalizarRol(valor) {
+    return normalizarTexto(valor)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  function esAdministradorReal() {
+    return normalizarRol(usuarioSesion && usuarioSesion.rol) === "administrador";
+  }
+
+  function esAdministrador() {
+    return normalizarRol(usuarioActual && usuarioActual.rol) === "administrador";
+  }
+
+  function esDirectorNacional() {
+    return normalizarRol(usuarioActual && usuarioActual.rol) === "director nacional";
+  }
+
+  function esRolNacional() {
+    const rol = normalizarRol(usuarioActual && usuarioActual.rol);
+    return rol === "administrador" || rol === "director nacional" || rol === "tecnico nacional";
+  }
+
+  function puedeEditarAsistencia() {
+    return esFacilitador() || esAdministradorReal();
+  }
+
+  function filtrarSedesSegunVistaActual(sedes) {
+    if (!usuarioActual || !sedes) return [];
+
+    const rol = normalizarRol(usuarioActual.rol);
+
+    if (rol === "administrador" || rol === "director nacional" || rol === "tecnico nacional") {
+      return sedes;
+    }
+
+    if (rol === "tecnico regional") {
+      return sedes.filter(function(sede) {
+        return normalizarTexto(sede.regional) === normalizarTexto(usuarioActual.regional);
+      });
+    }
+
+    if (rol === "tecnico distrital") {
+      return sedes.filter(function(sede) {
+        return normalizarTexto(sede.distrito) === normalizarTexto(usuarioActual.distrito);
+      });
+    }
+
+    if (rol === "coordinador sede" || rol === "coordinador de sede" || rol === "facilitador") {
+      return sedes.filter(function(sede) {
+        return normalizarTexto(sede.centroSede) === normalizarTexto(usuarioActual.centroSede);
+      });
+    }
+
+    return [];
+  }
+
+
   function esFacilitador() {
-    return normalizarTexto(usuarioActual && usuarioActual.rol) === "Facilitador";
+    return normalizarRol(usuarioActual && usuarioActual.rol) === "facilitador";
   }
 
   function esCoordinadorSede() {
-    const rol = normalizarTexto(usuarioActual && usuarioActual.rol).toLowerCase();
+    const rol = normalizarRol(usuarioActual && usuarioActual.rol);
     return rol === "coordinador sede" || rol === "coordinador de sede";
   }
 
@@ -2289,6 +2411,7 @@
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
         usuarioActual = respuesta.usuario;
+        usuarioSesion = Object.assign({}, respuesta.usuario);
 
         if (normalizarTexto(usuarioActual.debeCambiarPassword).toUpperCase() === "SI") {
           mostrarCambioPassword(usuarioActual);
@@ -2385,6 +2508,7 @@
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
         usuarioActual.debeCambiarPassword = "NO";
+        usuarioSesion = Object.assign({}, usuarioActual);
         localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
 
         mensaje.textContent = "Contraseña actualizada correctamente.";
@@ -2418,13 +2542,19 @@
 
     if (!usuario || !tarjetaUsuario) return;
 
+    const rolReal = usuarioSesion && usuarioSesion.rol ? usuarioSesion.rol : usuario.rol;
+    const textoRol = esAdministradorReal() && normalizarTexto(rolReal) !== normalizarTexto(usuario.rol)
+      ? `${rolReal} | Vista: ${usuario.rol || ""}`
+      : `${usuario.rol || ""}`;
+
     tarjetaUsuario.innerHTML = `
       <span class="nombre-usuario">${usuario.nombre || ""}</span>
-      <span class="rol-usuario">${usuario.rol || ""}</span>
+      <span class="rol-usuario">${textoRol}</span>
     `;
 
     tarjetaUsuario.classList.remove("oculto");
     actualizarVisibilidadAsignacionGrupos(usuario);
+    actualizarPanelAdministrador();
   }
 
   function actualizarVisibilidadAsignacionGrupos(usuario) {
@@ -2445,7 +2575,9 @@
 
   function puedeConsultarAsignaciones(usuario) {
     const rol = normalizarTexto(usuario && usuario.rol).toLowerCase();
-    return rol === "coordinador sede" ||
+    return rol === "administrador" ||
+      rol === "director nacional" ||
+      rol === "coordinador sede" ||
       rol === "coordinador de sede" ||
       rol === "técnico nacional" ||
       rol === "tecnico nacional" ||
@@ -2456,7 +2588,7 @@
   }
 
   function puedeModificarAsignaciones() {
-    return esCoordinadorSede();
+    return esCoordinadorSede() || esAdministradorReal();
   }
 
   function ocultarDatosUsuarioFlotante() {
@@ -2466,6 +2598,217 @@
     tarjetaUsuario.innerHTML = "";
     tarjetaUsuario.classList.add("oculto");
   }
+
+
+  function actualizarPanelAdministrador() {
+    const panelAdmin = document.getElementById("panelAdministrador");
+    if (!panelAdmin) return;
+
+    if (!esAdministradorReal()) {
+      panelAdmin.classList.add("oculto");
+      return;
+    }
+
+    panelAdmin.classList.remove("oculto");
+
+    const rolSelect = document.getElementById("adminVistaRol");
+    if (rolSelect && usuarioActual && usuarioActual.rol) {
+      rolSelect.value = usuarioActual.rol;
+    }
+
+    cambiarRolVistaAdministrador();
+    cargarSedesModoAdministrador();
+  }
+
+  function cargarSedesModoAdministrador() {
+    if (!esAdministradorReal()) return;
+    if (sedesModoAdministrador && sedesModoAdministrador.length > 0) {
+      llenarRegionalesVistaAdministrador();
+      return;
+    }
+
+    const mensaje = document.getElementById("mensajeVistaAdministrador");
+    if (mensaje) {
+      mensaje.textContent = "Cargando sedes para modo administrador...";
+      mensaje.className = "mensaje";
+    }
+
+    const callbackName = "callbackSedesAdmin_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      if (respuesta.ok) {
+        sedesModoAdministrador = respuesta.sedes || [];
+        llenarRegionalesVistaAdministrador();
+        if (mensaje) {
+          mensaje.textContent = "";
+          mensaje.className = "mensaje";
+        }
+      } else if (mensaje) {
+        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar las sedes.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=sedesPermitidas"
+      + "&cedula=" + encodeURIComponent((usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula)
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function llenarRegionalesVistaAdministrador() {
+    const selectRegional = document.getElementById("adminVistaRegional");
+    if (!selectRegional) return;
+
+    const valorActual = selectRegional.value;
+    selectRegional.innerHTML = '<option value="">Todas</option>';
+
+    obtenerValoresUnicos(sedesModoAdministrador, "regional").forEach(function(regional) {
+      const option = document.createElement("option");
+      option.value = regional;
+      option.textContent = regional;
+      selectRegional.appendChild(option);
+    });
+
+    if (valorActual) selectRegional.value = valorActual;
+    cargarDistritosVistaAdministrador();
+  }
+
+  function cambiarRolVistaAdministrador() {
+    const rol = document.getElementById("adminVistaRol").value;
+    const requiereRegional = rol === "Técnico regional" || rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereDistrito = rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereSede = rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereGrupo = rol === "Facilitador";
+
+    document.getElementById("adminVistaRegional").disabled = !requiereRegional;
+    document.getElementById("adminVistaDistrito").disabled = !requiereDistrito;
+    document.getElementById("adminVistaSede").disabled = !requiereSede;
+    document.getElementById("adminVistaGrupo").disabled = !requiereGrupo;
+  }
+
+  function cargarDistritosVistaAdministrador() {
+    const regional = document.getElementById("adminVistaRegional").value;
+    const selectDistrito = document.getElementById("adminVistaDistrito");
+    const selectSede = document.getElementById("adminVistaSede");
+
+    if (!selectDistrito || !selectSede) return;
+
+    const valorActual = selectDistrito.value;
+    selectDistrito.innerHTML = '<option value="">Todos</option>';
+    selectSede.innerHTML = '<option value="">Todos</option>';
+
+    const sedesFiltradas = regional
+      ? sedesModoAdministrador.filter(function(s) { return normalizarTexto(s.regional) === normalizarTexto(regional); })
+      : sedesModoAdministrador;
+
+    obtenerValoresUnicos(sedesFiltradas, "distrito").forEach(function(distrito) {
+      const option = document.createElement("option");
+      option.value = distrito;
+      option.textContent = distrito;
+      selectDistrito.appendChild(option);
+    });
+
+    if (valorActual) selectDistrito.value = valorActual;
+    cargarSedesVistaAdministrador();
+  }
+
+  function cargarSedesVistaAdministrador() {
+    const regional = document.getElementById("adminVistaRegional").value;
+    const distrito = document.getElementById("adminVistaDistrito").value;
+    const selectSede = document.getElementById("adminVistaSede");
+
+    if (!selectSede) return;
+
+    const valorActual = selectSede.value;
+    selectSede.innerHTML = '<option value="">Todos</option>';
+
+    const sedesFiltradas = sedesModoAdministrador.filter(function(s) {
+      if (regional && normalizarTexto(s.regional) !== normalizarTexto(regional)) return false;
+      if (distrito && normalizarTexto(s.distrito) !== normalizarTexto(distrito)) return false;
+      return true;
+    });
+
+    sedesFiltradas.forEach(function(sede) {
+      const option = document.createElement("option");
+      option.value = sede.centroSede;
+      option.textContent = sede.codigoSede ? `${sede.codigoSede} - ${sede.centroSede}` : sede.centroSede;
+      selectSede.appendChild(option);
+    });
+
+    if (valorActual) selectSede.value = valorActual;
+  }
+
+  function aplicarVistaAdministrador() {
+    if (!esAdministradorReal()) return;
+
+    const rol = document.getElementById("adminVistaRol").value;
+    const regional = document.getElementById("adminVistaRegional").value;
+    const distrito = document.getElementById("adminVistaDistrito").value;
+    const centroSede = document.getElementById("adminVistaSede").value;
+    const grupo = document.getElementById("adminVistaGrupo").value;
+    const mensaje = document.getElementById("mensajeVistaAdministrador");
+
+    if ((rol === "Técnico regional" || rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador") && !regional) {
+      mensaje.textContent = "Para esta vista debe seleccionar una regional.";
+      mensaje.className = "mensaje error";
+      return;
+    }
+
+    if ((rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador") && !distrito) {
+      mensaje.textContent = "Para esta vista debe seleccionar un distrito.";
+      mensaje.className = "mensaje error";
+      return;
+    }
+
+    if ((rol === "Coordinador sede" || rol === "Facilitador") && !centroSede) {
+      mensaje.textContent = "Para esta vista debe seleccionar un centro sede.";
+      mensaje.className = "mensaje error";
+      return;
+    }
+
+    if (rol === "Facilitador" && !grupo) {
+      mensaje.textContent = "Para visualizar como facilitador debe seleccionar un grupo.";
+      mensaje.className = "mensaje error";
+      return;
+    }
+
+    usuarioActual = Object.assign({}, usuarioSesion, {
+      rol: rol,
+      regional: regional,
+      distrito: distrito,
+      centroSede: centroSede,
+      grupo: grupo
+    });
+
+    localStorage.setItem("usuarioCampamentoVista", JSON.stringify(usuarioActual));
+
+    mensaje.textContent = "Vista aplicada correctamente.";
+    mensaje.className = "mensaje ok";
+    mostrarDatosUsuario(usuarioActual);
+  }
+
+  function restablecerVistaAdministrador() {
+    if (!usuarioSesion) return;
+
+    usuarioActual = Object.assign({}, usuarioSesion);
+    localStorage.removeItem("usuarioCampamentoVista");
+    localStorage.setItem("usuarioCampamento", JSON.stringify(usuarioActual));
+
+    const mensaje = document.getElementById("mensajeVistaAdministrador");
+    if (mensaje) {
+      mensaje.textContent = "Vista de administrador restablecida.";
+      mensaje.className = "mensaje ok";
+    }
+
+    mostrarDatosUsuario(usuarioActual);
+  }
+
 
   function abrirModulo(modulo) {
     if (modulo === "asistencia") {
@@ -2566,7 +2909,7 @@
 
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
-        sedesAsistencia = respuesta.sedes || [];
+        sedesAsistencia = filtrarSedesSegunVistaActual(respuesta.sedes || []);
         llenarSelectorRegionalesAsistencia(sedesAsistencia);
 
         if (sedesAsistencia.length === 0) {
@@ -3490,7 +3833,7 @@
 
     window[callbackName] = function(respuesta) {
       if (respuesta.ok) {
-        sedesAcompanamiento = respuesta.sedes || [];
+        sedesAcompanamiento = filtrarSedesSegunVistaActual(respuesta.sedes || []);
         llenarSelectorRegionalesAcompanamiento(sedesAcompanamiento);
 
         if (sedesAcompanamiento.length === 0) {
@@ -4861,7 +5204,7 @@
           mensaje.classList.add("ok");
           mostrarEstudiantes(respuesta.estudiantes);
 
-          if (esFacilitador()) {
+          if (puedeEditarAsistencia()) {
             document.getElementById("btnGuardarAsistencia").classList.remove("oculto");
           } else {
             document.getElementById("btnGuardarAsistencia").classList.add("oculto");
@@ -4909,22 +5252,22 @@
 
           <div class="opciones-asistencia">
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" ${estado === "Presente" ? "checked" : ""} ${esFacilitador() ? "" : "disabled"}>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Presente" ${estado === "Presente" ? "checked" : ""} ${puedeEditarAsistencia() ? "" : "disabled"}>
               Presente
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza" ${estado === "Tardanza" ? "checked" : ""} ${esFacilitador() ? "" : "disabled"}>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Tardanza" ${estado === "Tardanza" ? "checked" : ""} ${puedeEditarAsistencia() ? "" : "disabled"}>
               Tardanza
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente" ${estado === "Ausente" ? "checked" : ""} ${esFacilitador() ? "" : "disabled"}>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Ausente" ${estado === "Ausente" ? "checked" : ""} ${puedeEditarAsistencia() ? "" : "disabled"}>
               Ausente
             </label>
 
             <label>
-              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa" ${estado === "Excusa" ? "checked" : ""} ${esFacilitador() ? "" : "disabled"}>
+              <input type="radio" name="asistencia_${estudiante.idEstudiante}" value="Excusa" ${estado === "Excusa" ? "checked" : ""} ${puedeEditarAsistencia() ? "" : "disabled"}>
               Excusa
             </label>
           </div>
@@ -4952,8 +5295,8 @@
       return;
     }
 
-    if (!esFacilitador()) {
-      mensaje.textContent = "Solo los facilitadores pueden registrar o modificar asistencia.";
+    if (!puedeEditarAsistencia()) {
+      mensaje.textContent = "Solo los facilitadores o el administrador pueden registrar o modificar asistencia.";
       mensaje.classList.add("error");
       return;
     }
@@ -4970,7 +5313,7 @@
       return;
     }
 
-    if (normalizarTexto(grupo) !== normalizarTexto(usuarioActual.grupo)) {
+    if (!esAdministradorReal() && normalizarTexto(grupo) !== normalizarTexto(usuarioActual.grupo)) {
       mensaje.textContent = "No puede guardar asistencia de un grupo distinto al asignado.";
       mensaje.classList.add("error");
       return;
@@ -4996,8 +5339,11 @@
     });
 
     const payload = {
-      cedula: usuarioActual.cedula,
+      cedula: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
       fechaAsistencia: fechaAsistencia,
+      regional: regionalSeleccionada,
+      distrito: distritoSeleccionado,
+      centroSede: centroSeleccionado,
       grupo: grupo,
       registros: registros
     };
@@ -6420,6 +6766,8 @@
 
   function cerrarSesion() {
     usuarioActual = null;
+    usuarioSesion = null;
+    sedesModoAdministrador = [];
     estudiantesActuales = [];
     sedesAsistencia = [];
     sedeSeleccionadaAsistencia = null;
@@ -6431,6 +6779,7 @@
     sedeSeleccionadaIncidencia = null;
 
     localStorage.removeItem("usuarioCampamento");
+    localStorage.removeItem("usuarioCampamentoVista");
     ocultarDatosUsuarioFlotante();
 
     document.getElementById("cedula").value = "";
