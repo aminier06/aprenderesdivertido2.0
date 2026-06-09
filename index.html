@@ -6154,14 +6154,16 @@
     const callbackName = "callbackFacilitadoresSede_" + Date.now();
 
     window[callbackName] = function(respuesta) {
+      const mensaje = document.getElementById("mensajeAsignacionGrupos");
       if (respuesta.ok) {
         datosAsignacionGrupos = respuesta;
+        if (mensaje) { mensaje.textContent = ""; mensaje.className = "mensaje"; }
         renderizarModuloAsignacionGrupos();
-        mensaje.textContent = "";
-        mensaje.className = "mensaje";
       } else {
-        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los facilitadores.";
-        mensaje.classList.add("error");
+        if (mensaje) {
+          mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los facilitadores.";
+          mensaje.className = "mensaje error";
+        }
       }
 
       delete window[callbackName];
@@ -6553,16 +6555,18 @@
     const callbackName = "callbackEstudiantesAsignacion_" + Date.now();
 
     window[callbackName] = function(respuesta) {
+      const mensaje = document.getElementById("mensajeAsignacionEstudiantesGrupos");
       if (respuesta.ok) {
         datosAsignacionEstudiantesGrupos = respuesta;
-        mensaje.textContent = "";
-        mensaje.className = "mensaje";
+        if (mensaje) { mensaje.textContent = ""; mensaje.className = "mensaje"; }
         renderizarModuloAsignacionEstudiantesGrupos();
       } else {
         document.getElementById("tablaAsignacionEstudiantesGrupos").classList.add("oculto");
         document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.add("oculto");
-        mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los estudiantes.";
-        mensaje.classList.add("error");
+        if (mensaje) {
+          mensaje.textContent = respuesta.mensaje || "No se pudieron cargar los estudiantes.";
+          mensaje.className = "mensaje error";
+        }
       }
 
       delete window[callbackName];
