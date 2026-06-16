@@ -1637,11 +1637,232 @@
     .grid-graficos-dashboard.oculto,
     .tabla-contenedor.oculto,
     .bloque-formulario.oculto { display: none !important; }
+
+    /* ══════════════════════════════════════════════
+       BANNER OFFLINE
+    ══════════════════════════════════════════════ */
+    #bannerOffline {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 10px 20px;
+      font-size: 13.5px;
+      font-weight: 500;
+      align-items: center;
+      gap: 10px;
+      z-index: 9000;
+      border-top: 2px solid #f59e0b;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+    }
+    #bannerOffline.visible { display: flex; }
+    #bannerOffline .offline-icono { font-size: 18px; flex-shrink: 0; }
+    #bannerOffline .offline-texto { flex: 1; line-height: 1.4; }
+    #bannerOffline .offline-texto span { display: block; font-size: 11.5px; color: #94a3b8; font-weight: 400; margin-top: 2px; }
+    #bannerOffline .offline-btn {
+      background: #f59e0b;
+      color: #1e293b;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 0;
+      flex-shrink: 0;
+    }
+    #bannerOffline .offline-btn:hover { background: #fbbf24; }
+    body.offline-mode { padding-bottom: 58px; }
+
+    /* ══════════════════════════════════════════════
+       RESPONSIVE MÓVIL – MEJORAS COMPLETAS
+    ══════════════════════════════════════════════ */
+
+    /* ── Pantallas medianas ≤ 900px ─────────────── */
+    @media (max-width: 900px) {
+      .fila-matriz,
+      .fila-matriz.encabezado,
+      .form-grid-2,
+      .form-grid-3 { grid-template-columns: 1fr; }
+      .fila-matriz.encabezado { display: none; }
+      .tarjeta { padding: 20px; }
+
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+      .menu-dashboard-lateral {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px;
+      }
+      .menu-dashboard-lateral h3 { width: 100%; margin-bottom: 4px; }
+      .item-dashboard-lateral {
+        flex: 1 1 auto;
+        min-width: 130px;
+        grid-template-columns: 28px 1fr;
+        gap: 6px;
+        padding: 8px 10px;
+      }
+      .item-dashboard-lateral.activo::before { display: none; }
+      .texto-dashboard-lateral span { display: none; }
+    }
+
+    /* ── Pantallas pequeñas ≤ 700px ─────────────── */
+    @media (max-width: 700px) {
+      /* Header */
+      header { padding: 0 14px; height: 54px; gap: 10px; }
+      .header-textos .titulo-header { font-size: 13px; }
+      .header-textos .subtitulo-header { display: none; }
+      #usuarioFlotante { max-width: 150px; padding: 5px 10px 5px 5px; }
+      .nombre-usuario { font-size: 11px; }
+      .rol-usuario { display: none; }
+
+      /* Contenedor principal */
+      .contenedor { padding: 14px 12px 40px; }
+
+      /* Tarjetas */
+      .tarjeta { padding: 16px 14px; border-radius: var(--r-lg); }
+
+      /* Login */
+      #login { margin-top: 20px; padding: 24px 18px; }
+
+      /* Panel título */
+      .panel-titulo { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .btn-cerrar-sesion { align-self: flex-end; }
+
+      /* Grid de módulos: 2 columnas fijas en móvil */
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .modulo { padding: 14px 12px 12px; }
+      .modulo h3 { font-size: 12.5px; }
+      .modulo p  { font-size: 11px; }
+      .icono-modulo { width: 32px; height: 32px; margin-bottom: 8px; }
+
+      /* Botones – táctiles más grandes */
+      button { padding: 11px 18px; font-size: 14px; }
+      .btn-cerrar-sesion { padding: 8px 14px; }
+      .btn-vista-rapida  { padding: 8px 13px; }
+
+      /* Opciones de asistencia apiladas */
+      .fila-estudiante { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .opciones-asistencia {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      .opciones-asistencia label {
+        justify-content: center;
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 11.5px;
+      }
+
+      /* Tablas – scroll horizontal con indicador */
+      .tabla-contenedor {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+      }
+      .tabla-contenedor::after {
+        content: "← deslizar →";
+        display: block;
+        text-align: center;
+        font-size: 10.5px;
+        color: var(--texto-3);
+        padding: 5px 0 3px;
+        letter-spacing: 0.3px;
+      }
+      table { min-width: 640px; font-size: 12.5px; }
+      th, td { padding: 7px 8px; }
+
+      /* Dashboard móvil */
+      .tarjeta-grafico-dashboard { min-height: 220px; }
+      .contenedor-canvas-dashboard { height: 180px; }
+      .db-kpis { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .db-graficos-grid { grid-template-columns: 1fr; }
+      .db-canvas-wrap { height: 180px; }
+
+      /* Formularios */
+      input, select, textarea {
+        font-size: 16px; /* Evita zoom automático en iOS */
+        padding: 11px 12px;
+      }
+
+      /* Resumen del día: 2 columnas */
+      .resumen-dia-grid { grid-template-columns: repeat(2, 1fr); }
+
+      /* Panel administrador */
+      .vistas-rapidas { gap: 6px; }
+      .btn-vista-rapida { font-size: 11.5px; padding: 7px 11px; }
+
+      /* Acciones de módulo apiladas */
+      .acciones-modulo { flex-direction: column; align-items: flex-start; }
+      .acciones-asignacion { flex-direction: column; align-items: stretch; }
+      .acciones-asignacion button { width: 100%; text-align: center; margin: 0; }
+
+      /* Barra de vista simulada */
+      #barraVistaSimulada { padding: 7px 14px; font-size: 12px; }
+
+      /* Modal de asignación */
+      .modal-asignacion { padding: 20px 16px; }
+      .modal-asignacion h3 { font-size: 17px; }
+      .grupos-preview { grid-template-columns: 1fr; }
+      .acciones-modal { flex-direction: column; }
+      .acciones-modal button { width: 100%; margin: 0; }
+
+      /* Encabezado de módulo */
+      .encabezado-modulo { flex-direction: column; gap: 10px; }
+
+      /* Tabla de asignación */
+      .tabla-asignacion select { min-width: 160px; }
+
+      /* Dashboard nuevo layout */
+      .db-menu { flex-direction: row; flex-wrap: wrap; gap: 7px; }
+      .db-menu-item {
+        flex: 1 1 auto;
+        min-width: 110px;
+        padding: 8px 10px;
+      }
+      .db-item-texto span { display: none; }
+    }
+
+    /* ── Pantallas muy pequeñas ≤ 400px ─────────── */
+    @media (max-width: 400px) {
+      .grid { grid-template-columns: 1fr; }
+      .opciones-asistencia { grid-template-columns: repeat(2, 1fr); }
+      .resumen-dia-grid { grid-template-columns: 1fr; }
+      .db-kpis { grid-template-columns: 1fr; }
+      .nombre-usuario { display: none; }
+      .avatar-usuario { width: 30px; height: 30px; }
+      #usuarioFlotante { padding: 5px 8px 5px 5px; gap: 5px; }
+    }
   </style>
+  <!-- PWA: tema y pantalla completa -->
+  <meta name="theme-color" content="#0e4272">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Aprender es Divertido">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
+
+<!-- ── BANNER OFFLINE ──────────────────────────────────────────────── -->
+<div id="bannerOffline" role="status" aria-live="polite">
+  <span class="offline-icono">📶</span>
+  <span class="offline-texto">
+    Sin conexión a internet
+    <span>Los datos no podrán guardarse. Conéctate para continuar.</span>
+  </span>
+  <button class="offline-btn" onclick="intentarReconexion()">Reintentar</button>
+</div>
 
 <header>
   <img src="logominerd.jpeg" alt="Logo MINERD" class="logo-minerd-header">
@@ -7294,6 +7515,50 @@
     document.getElementById("mensajeCambioPassword").textContent = "";
 
     mostrarModulo("login");
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MODO OFFLINE – Detección y banner
+  // ═══════════════════════════════════════════════════════════════════════
+  (function() {
+    var banner = document.getElementById("bannerOffline");
+    if (!banner) return;
+
+    function actualizarEstadoConexion() {
+      var offline = !navigator.onLine;
+      if (offline) {
+        banner.classList.add("visible");
+        document.body.classList.add("offline-mode");
+      } else {
+        banner.classList.remove("visible");
+        document.body.classList.remove("offline-mode");
+      }
+    }
+
+    window.addEventListener("online",  actualizarEstadoConexion);
+    window.addEventListener("offline", actualizarEstadoConexion);
+    actualizarEstadoConexion(); // Verificar estado inicial
+
+    window.intentarReconexion = function() {
+      // Intentar hacer un ping silencioso al backend
+      var img = new Image();
+      img.onload  = function() { actualizarEstadoConexion(); };
+      img.onerror = function() { actualizarEstadoConexion(); };
+      img.src = "https://www.google.com/favicon.ico?_=" + Date.now();
+    };
+  })();
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SERVICE WORKER – Caché de recursos estáticos
+  // ═══════════════════════════════════════════════════════════════════════
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("/sw.js").then(function(reg) {
+        console.log("[SW] Registrado:", reg.scope);
+      }).catch(function(err) {
+        console.warn("[SW] No se pudo registrar:", err);
+      });
+    });
   }
 </script>
 
