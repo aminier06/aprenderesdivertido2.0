@@ -7359,54 +7359,79 @@
     const btn = document.getElementById("btnGuardarAsignacionEstudiantesGrupos");
     if (btn) btn.disabled = true;
 
-    const payload = {
-      accion: "guardarAsignacionEstudiantesGrupos",
-      cedulaCoordinador: usuarioActual.cedula,
-      asignaciones: asignaciones
-    };
+    // Google Apps Script solo acepta JSONP (GET). Para no superar el límite de URL
+    // (~2 KB), dividimos las asignaciones en lotes de 20 y los enviamos en serie.
+    const LOTE = 20;
+    const totalLotes = Math.ceil(asignaciones.length / LOTE);
+    let loteActual = 0;
 
-    // Se usa fetch POST porque el payload con todos los estudiantes puede superar
-    // el límite de URL (~2 KB) que tiene Google Apps Script en peticiones GET/JSONP.
-    // El backend debe tener doPost() implementado y devolver JSON con Content-Type
-    // application/json para que no sea necesario JSONP.
-    const controller = new AbortController();
-    const timer = setTimeout(function() { controller.abort(); }, 60000); // 60 s
+    function enviarLote() {
+      const porcion = asignaciones.slice(loteActual * LOTE, (loteActual + 1) * LOTE);
+      const esUltimo = (loteActual === totalLotes - 1);
 
-    fetch(URL_SCRIPT, {
-      method: "POST",
-      signal: controller.signal,
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      // Google Apps Script rechaza application/json desde páginas externas (CORS preflight).
-      // text/plain es una "simple request" y no lanza preflight, pero el backend
-      // debe leer e.postData.contents y hacer JSON.parse() manualmente.
-      body: JSON.stringify(payload)
-    })
-    .then(function(res) {
-      clearTimeout(timer);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(function(respuesta) {
-      if (btn) btn.disabled = false;
-      if (respuesta.ok) {
-        mensaje.textContent = respuesta.mensaje || "Asignación de estudiantes guardada correctamente.";
-        mensaje.className = "mensaje ok";
-        cargarEstudiantesAsignacionGrupos();
-      } else {
-        mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asignación de estudiantes.";
-        mensaje.className = "mensaje error";
+      if (totalLotes > 1) {
+        mensaje.textContent = "Guardando asignación de estudiantes… (" + (loteActual + 1) + " de " + totalLotes + ")";
       }
-    })
-    .catch(function(err) {
-      clearTimeout(timer);
-      if (btn) btn.disabled = false;
-      if (err.name === "AbortError") {
-        mensaje.textContent = "El servidor tardó demasiado en responder. Verifica tu conexión e intenta de nuevo.";
-      } else {
-        mensaje.textContent = "Error al conectar con el servidor: " + err.message;
-      }
-      mensaje.className = "mensaje error";
-    });
+
+      llamarBackend(
+        {
+          accion: "guardarAsignacionEstudiantesGrupos",
+          cedulaCoordinador: usuarioActual.cedula,
+          esUltimLote: esUltimo ? "1" : "0",
+          lote: loteActual,
+          totalLotes: totalLotes,
+          asignaciones: JSON.stringify(porcion)
+        },
+        function(respuesta) {
+          if (!respuesta.ok) {
+            if (btn) btn.disabled = false;
+            mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asignación de estudiantes.";
+            mensaje.className = "mensaje error";
+            return;
+          }
+
+          if (esUltimo) {
+            if (btn) btn.disabled = false;
+            mensaje.textContent = respuesta.mensaje || "Asignación de estudiantes guardada correctamente.";
+            mensaje.className = "mensaje ok";
+            cargarEstudiantesAsignacionGrupos();
+          } else {
+            loteActual++;
+            enviarLote();
+          }
+        },
+        { timeout: 30000 }
+      );
+    }
+
+    // Caso especial: lista vacía
+    if (asignaciones.length === 0) {
+      llamarBackend(
+        {
+          accion: "guardarAsignacionEstudiantesGrupos",
+          cedulaCoordinador: usuarioActual.cedula,
+          esUltimLote: "1",
+          lote: 0,
+          totalLotes: 1,
+          asignaciones: "[]"
+        },
+        function(respuesta) {
+          if (btn) btn.disabled = false;
+          if (respuesta.ok) {
+            mensaje.textContent = respuesta.mensaje || "Asignación guardada correctamente.";
+            mensaje.className = "mensaje ok";
+            cargarEstudiantesAsignacionGrupos();
+          } else {
+            mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asignación.";
+            mensaje.className = "mensaje error";
+          }
+        },
+        { timeout: 30000 }
+      );
+      return;
+    }
+
+    enviarLote();
   }
 
 
