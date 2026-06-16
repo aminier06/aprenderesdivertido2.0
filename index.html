@@ -7466,33 +7466,35 @@
     /*
       REGLA PRINCIPAL (basada en nivel de Lengua Española):
         - Cada grupo solo puede contener niveles ADYACENTES:
-            · Explorador + Creador  → permitido
-            · Creador + Innovador   → permitido
-            · Explorador + Innovador → PROHIBIDO
-            · Un solo nivel          → siempre permitido
+            · Explorador + Creador   → permitido solo si es inevitable
+            · Creador   + Innovador  → permitido solo si es inevitable
+            · Explorador + Innovador → PROHIBIDO siempre
+            · Un solo nivel          → PREFERIDO (grupos puros primero)
         - Máximo 25 estudiantes por grupo.
-        - Distribución lo más homogénea posible dentro de la restricción.
+        - PRIORIDAD: grupos puros (E, C, I) antes que mezclas.
+          Solo se mezcla el sobrante que no llena un grupo entero por sí solo.
 
       ESTRATEGIA:
-        1. Separar estudiantes en tres bandas por nivelLengua:
-             banda E  = Explorador
-             banda C  = Creador
-             banda I  = Innovador
-             banda SD = Sin dato  → se tratan como Creador a efectos de compatibilidad
-        2. Determinar cuántos grupos se necesitan para cada banda pura,
-           luego completar mezclando E+C y C+I de forma equilibrada.
-        3. Asignar grupos concretos a cada partición y repartir estudiantes
-           en serpentina dentro de cada partición para maximizar homogeneidad.
+        1. Separar en bandas E, C, I (Sin dato → Creador).
+        2. Calcular grupos puros para cada banda.
+           - Si la banda llena exactamente sus grupos → puramente puros.
+           - Si sobran estudiantes que no llenan otro grupo, son "sobrantes".
+        3. Agrupar los sobrantes:
+           - Sobrante E + sobrante C → van a un grupo EC mixto.
+           - Sobrante C + sobrante I → van a un grupo CI mixto.
+           - Si hay sobrante de los tres: E+C en un grupo, I en otro CI si cabe.
+           - Si el sobrante mixto supera 25, crear grupos adicionales de mezcla.
+        4. Asignar grupos concretos y repartir en serpentina.
     */
 
     const MAX_POR_GRUPO = 25;
     const numGrupos = grupos.length;
 
     // ── 1. Separar por nivel de Lengua ──────────────────────────────────────
-    const bandaE  = []; // Explorador
-    const bandaC  = []; // Creador
-    const bandaI  = []; // Innovador
-    const bandaSD = []; // Sin dato
+    const bandaE  = [];
+    const bandaC  = [];
+    const bandaI  = [];
+    const bandaSD = [];
 
     estudiantes.forEach(function(e) {
       const n = normalizarTexto(e.nivelLengua).toLowerCase();
@@ -7502,173 +7504,135 @@
       else                         bandaSD.push(e);
     });
 
-    // Dentro de cada banda, ordenar descendente por puntaje compuesto
-    // (Lengua × 2 + Matemática) para maximizar homogeneidad interna
     function ordenarBanda(arr) {
       return arr.slice().sort(function(a, b) {
         return puntajeEstudiante(b) - puntajeEstudiante(a);
       });
     }
 
-    const E  = ordenarBanda(bandaE);
-    const C  = ordenarBanda(bandaC.concat(bandaSD)); // Sin dato ≡ Creador
-    const I  = ordenarBanda(bandaI);
+    const E = ordenarBanda(bandaE);
+    const C = ordenarBanda(bandaC.concat(bandaSD)); // Sin dato ≡ Creador
+    const I = ordenarBanda(bandaI);
 
-    // ── 2. Calcular cuántos grupos necesita cada partición ───────────────────
-    /*
-      Particiones posibles: E, EC, C, CI, I
-      Objetivo: asignar grupos enteros a particiones de modo que:
-        - Grupos E  reciben solo Exploradores
-        - Grupos EC reciben Exploradores y Creadores mezclados
-        - Grupos C  reciben solo Creadores
-        - Grupos CI reciben Creadores e Innovadores mezclados
-        - Grupos I  reciben solo Innovadores
-      Se minimiza el número de particiones usando grupos de mezcla (EC, CI)
-      antes de crear grupos puros, para no desperdiciar cupo.
-    */
-
-    // Total de estudiantes
     const totE = E.length, totC = C.length, totI = I.length;
     const totTotal = totE + totC + totI;
 
-    // Número mínimo de grupos necesarios para contener a todos (puede exceder
-    // numGrupos si hay demasiados estudiantes, en ese caso se respeta el límite
-    // relajando la restricción de 25 como último recurso).
-    const gruposMinimos = Math.ceil(totTotal / MAX_POR_GRUPO);
-    const gruposDisponibles = Math.max(numGrupos, gruposMinimos);
+    // ── 2. Calcular grupos PUROS para cada banda ─────────────────────────────
+    // Grupos completos de 25 que puede formar cada banda sola
+    const gEpuro = Math.floor(totE / MAX_POR_GRUPO);
+    const gCpuro = Math.floor(totC / MAX_POR_GRUPO);
+    const gIpuro = Math.floor(totI / MAX_POR_GRUPO);
 
-    // ── 3. Distribuir grupos entre particiones ───────────────────────────────
+    // Sobrantes que no llenan un grupo completo
+    let sobranteE = totE - gEpuro * MAX_POR_GRUPO;
+    let sobranteC = totC - gCpuro * MAX_POR_GRUPO;
+    let sobranteI = totI - gIpuro * MAX_POR_GRUPO;
+
+    // ── 3. Resolver sobrantes con mezcla mínima ──────────────────────────────
     /*
-      Algoritmo greedy:
-        a) Calcular cuántos grupos "puros" necesita cada banda para
-           acomodar su exceso (estudiantes que no caben en mezclas).
-        b) Asignar grupos de mezcla EC y CI para combinar las bandas
-           frontera de manera equilibrada.
-        c) Distribuir los grupos disponibles restantes como puro C si sobra.
+      Orden de prioridad para absorber sobrantes:
+        a) Si sobranteE + sobranteC <= MAX → un grupo EC mixto.
+           Si excede MAX, crear grupos EC adicionales.
+        b) Si sobranteI + sobranteC_restante <= MAX → un grupo CI mixto.
+        c) Si solo sobra uno de los tres → añadir al grupo puro correspondiente
+           (el último grupo de esa banda tendrá menos de 25, lo cual es válido).
+
+      Nota: "grupo puro" puede tener < 25 estudiantes; lo importante es que
+      todos son del mismo nivel. Eso es preferible a mezclar.
     */
 
-    // Grupos asignados a cada partición (empezamos en 0)
-    let gE = 0, gEC = 0, gC = 0, gCI = 0, gI = 0;
+    // Cuántos estudiantes de E van a grupos puros vs mezcla
+    let eEnPuro  = gEpuro * MAX_POR_GRUPO + sobranteE; // todos E van a grupos E
+    let cEnPuro  = gCpuro * MAX_POR_GRUPO;              // C completos en puros
+    let iEnPuro  = gIpuro * MAX_POR_GRUPO + sobranteI;  // todos I van a grupos I
+    let cEnMezcla = sobranteC;                           // sobrante C va a mezcla
 
-    // Capacidad total de mezcla EC y CI juntos
-    // Primero intentamos mezclar todo C con E y con I usando grupos de mezcla.
-    // Grupos de mezcla EC: cada uno lleva floor(MAX/2) E y ceil(MAX/2) C aprox.
-    // En la práctica los distribuimos en serpentina, así que la mitad del cupo
-    // puede ser de cada banda. Usamos MAX_POR_GRUPO como capacidad total.
+    // Grupos de mezcla necesarios para el sobrante C
+    // El sobrante C se distribuye entre grupos EC y CI según haya sobrante E/I
+    let cParaEC = 0, cParaCI = 0;
+    let gEC = 0, gCI = 0;
 
-    // Grupos estrictamente necesarios para E, C, I sin mezcla:
-    const gEpuro = Math.ceil(totE / MAX_POR_GRUPO);
-    const gCpuro = Math.ceil(totC / MAX_POR_GRUPO);
-    const gIpuro = Math.ceil(totI / MAX_POR_GRUPO);
-
-    // Si el total de grupos puros es <= numGrupos, podemos asignar así (más simple).
-    // Si no, necesitamos mezclar para ahorrar grupos.
-
-    // Estrategia unificada: construir particiones aprovechando mezcla.
-    // Estimamos capacidad de mezcla EC y CI como capacidad de "absorber"
-    // estudiantes de dos bandas adyacentes en el mismo grupo.
-
-    // Paso A: ¿Cuántos grupos de mezcla EC y CI son óptimos?
-    //   Queremos minimizar |gE - gI| (simetría) y maximizar el uso de grupos
-    //   disponibles mezclando las bandas "pequeñas" con la "grande".
-    //   Simplificación práctica: la banda C actúa como cola compartida.
-
-    // Algoritmo simplificado pero correcto:
-    //   1. Mezclar todo E con inicio de C en grupos EC (tantos como necesite E).
-    //   2. Mezclar todo I con fin de C en grupos CI (tantos como necesite I).
-    //   3. El C restante (no usado en mezclas) va a grupos C puros.
-    //   4. Si sobran grupos disponibles, se reparten como C puros o se dejan vacíos.
-
-    // Capacidad de un grupo de mezcla EC: MAX estudiantes totales, ≤ MAX de cada banda.
-    // Para repartir E y C en grupos EC de manera equilibrada usamos la serpentina
-    // al final. Aquí solo calculamos cuántos grupos EC necesitamos para acomodar
-    // a todos los E y a todos los I juntos con parte de C.
-
-    // Grupos EC necesarios = grupos que pueden contener todos los E junto con C
-    //   Mínimos EC = ceil(totE / MAX_POR_GRUPO) ... pero si totC ayuda a llenar,
-    //   podemos necesitar solo ceil((totE + partC) / MAX_POR_GRUPO).
-    // Simplificamos: gEC se fija en ceil(totE / MAX_POR_GRUPO) como mínimo,
-    // luego llenamos con C el cupo sobrante en cada grupo EC.
-
-    gEC = (totE > 0) ? Math.ceil(totE / MAX_POR_GRUPO) : 0;
-    gCI = (totI > 0) ? Math.ceil(totI / MAX_POR_GRUPO) : 0;
-
-    // Cuántos C pueden entrar en los grupos EC y CI
-    const cupoEC = gEC * MAX_POR_GRUPO - totE; // cupo sobrante en grupos EC para C
-    const cupoCI = gCI * MAX_POR_GRUPO - totI; // cupo sobrante en grupos CI para C
-
-    // C restantes después de llenar huecos en EC y CI
-    const cEnEC  = Math.min(totC, cupoEC);
-    const cRestante1 = totC - cEnEC;
-    const cEnCI  = Math.min(cRestante1, cupoCI);
-    const cRestante2 = cRestante1 - cEnCI;
-
-    gC = (cRestante2 > 0) ? Math.ceil(cRestante2 / MAX_POR_GRUPO) : 0;
-
-    // Total grupos calculados
-    let totalCalculado = gEC + gCI + gC;
-
-    // Si hay más grupos disponibles que los calculados, distribuir el sobrante
-    // como grupos C puros adicionales (o E/I puros si no hay C sobrante).
-    // Si hay menos grupos disponibles, compactar: aumentar capacidad efectiva.
-    if (totalCalculado > numGrupos) {
-      // Necesitamos más grupos de los disponibles; relajar agrupando más
-      // estudiantes por grupo (se superará el límite de 25 solo si es inevitable).
-      // Redistribuir todo en los grupos disponibles ignorando la restricción extra.
-      // Esto no debería ocurrir normalmente ya que numGrupos se calcula de la cuota.
-      gC = Math.max(0, numGrupos - gEC - gCI);
-    } else if (totalCalculado < numGrupos) {
-      // Sobran grupos: agregarlos como C puros
-      gC += (numGrupos - totalCalculado);
+    if (sobranteE > 0 && sobranteC > 0) {
+      // Mezclar sobrante E con parte del sobrante C
+      const totalEC = sobranteE + Math.min(sobranteC, MAX_POR_GRUPO - sobranteE);
+      cParaEC = Math.min(sobranteC, MAX_POR_GRUPO - sobranteE);
+      gEC = Math.ceil((sobranteE + cParaEC) / MAX_POR_GRUPO);
+    } else if (sobranteE > 0) {
+      // Solo sobrante E, sin C sobrante: va a su propio grupo (incompleto pero puro)
+      // ya está contado en eEnPuro
+      gEC = 0;
     }
 
-    // ── 4. Asignar grupos concretos a cada partición ─────────────────────────
-    let grupoIdx = 0;
-    const particionGrupos = {
-      E:  [], // grupos solo Explorador
-      EC: [], // grupos Explorador + Creador
-      C:  [], // grupos solo Creador
-      CI: [], // grupos Creador + Innovador
-      I:  []  // grupos solo Innovador
-    };
+    const cRestante = sobranteC - cParaEC;
 
-    for (let k = 0; k < gEC; k++) particionGrupos.EC.push(grupos[grupoIdx++] || ("Grupo " + grupoIdx));
-    for (let k = 0; k < gCI; k++) particionGrupos.CI.push(grupos[grupoIdx++] || ("Grupo " + grupoIdx));
-    for (let k = 0; k < gC;  k++) particionGrupos.C.push(grupos[grupoIdx++]  || ("Grupo " + grupoIdx));
-
-    // Si aún quedan grupos sin asignar (edge case), añadirlos a C
-    while (grupoIdx < numGrupos) {
-      particionGrupos.C.push(grupos[grupoIdx++]);
+    if (sobranteI > 0 && cRestante > 0) {
+      cParaCI = Math.min(cRestante, MAX_POR_GRUPO - sobranteI);
+      gCI = Math.ceil((sobranteI + cParaCI) / MAX_POR_GRUPO);
+    } else if (sobranteI > 0) {
+      gCI = 0;
     }
 
-    // ── 5. Repartir estudiantes en serpentina dentro de cada partición ───────
+    const cRestante2 = cRestante - cParaCI;
+    // Si aún queda sobrante C sin mezclar, añadirlo al último grupo C puro
+    // (ese grupo tendrá < 25 pero será puro)
+    const cTotalPuro = cEnPuro + cRestante2;
+    const gCpuroFinal = Math.ceil(cTotalPuro / MAX_POR_GRUPO);
+
+    // Si E/I no tienen sobrante pero sí tienen estudiantes → grupo puro incompleto
+    const gEpuroFinal = sobranteE > 0 && gEC === 0
+      ? Math.ceil(totE / MAX_POR_GRUPO)   // sobrante E va a su propio grupo puro
+      : gEpuro;
+    const gIpuroFinal = sobranteI > 0 && gCI === 0
+      ? Math.ceil(totI / MAX_POR_GRUPO)
+      : gIpuro;
+
+    // ── 4. Verificar que tenemos suficientes grupos ──────────────────────────
+    let totalNecesario = gEpuroFinal + gEC + gCpuroFinal + gCI + gIpuroFinal;
+
+    // Si hay más grupos disponibles que los necesarios, repartir sobrante en C
+    // Si hay menos, comprimir: algunos grupos puros tendrán más de 25 (inevitable)
+    let gCExtra = 0;
+    if (totalNecesario < numGrupos) {
+      gCExtra = numGrupos - totalNecesario;
+    }
+
+    // ── 5. Asignar grupos concretos a cada partición ─────────────────────────
+    const particionGrupos = { E: [], EC: [], C: [], CI: [], I: [] };
+    let gi = 0;
+
+    // Orden: E puros → EC mezcla → C puros → CI mezcla → I puros
+    for (let k = 0; k < gEpuroFinal;       k++) particionGrupos.E.push(grupos[gi++]  || ("Grupo " + (gi)));
+    for (let k = 0; k < gEC;               k++) particionGrupos.EC.push(grupos[gi++] || ("Grupo " + (gi)));
+    for (let k = 0; k < gCpuroFinal + gCExtra; k++) particionGrupos.C.push(grupos[gi++] || ("Grupo " + (gi)));
+    for (let k = 0; k < gCI;               k++) particionGrupos.CI.push(grupos[gi++] || ("Grupo " + (gi)));
+    for (let k = 0; k < gIpuroFinal;       k++) particionGrupos.I.push(grupos[gi++]  || ("Grupo " + (gi)));
+
+    // Si quedan grupos sin asignar (por diferencias de cálculo), añadir a C
+    while (gi < numGrupos) { particionGrupos.C.push(grupos[gi++]); }
+
+    // ── 6. Repartir estudiantes en serpentina ────────────────────────────────
     const asignacion = {};
     grupos.forEach(function(g) { asignacion[g] = []; });
 
     function repartirSerpentina(listaEstudiantes, listaGrupos) {
       if (!listaGrupos.length || !listaEstudiantes.length) return;
       const n = listaGrupos.length;
-      let gi = 0, fw = true;
-      listaEstudiantes.forEach(function(e) {
-        // Saltar grupos llenos
+      let idx = 0, fw = true;
+      listaEstudiantes.forEach(function(est) {
         let intentos = 0;
-        while (asignacion[listaGrupos[gi]].length >= MAX_POR_GRUPO && intentos < n) {
-          if (fw) { gi++; if (gi >= n) { gi = n - 1; fw = false; } }
-          else    { gi--; if (gi < 0)  { gi = 0;     fw = true;  } }
+        while (asignacion[listaGrupos[idx]].length >= MAX_POR_GRUPO && intentos < n) {
+          if (fw) { idx++; if (idx >= n) { idx = n - 1; fw = false; } }
+          else    { idx--; if (idx < 0)  { idx = 0;     fw = true;  } }
           intentos++;
         }
-        asignacion[listaGrupos[gi]].push(e);
-        if (fw) { gi++; if (gi >= n) { gi = n - 1; fw = false; } }
-        else    { gi--; if (gi < 0)  { gi = 0;     fw = true;  } }
+        asignacion[listaGrupos[idx]].push(est);
+        if (fw) { idx++; if (idx >= n) { idx = n - 1; fw = false; } }
+        else    { idx--; if (idx < 0)  { idx = 0;     fw = true;  } }
       });
     }
 
-    // Grupos EC: mezclar E con la primera porción de C
-    const cParaEC = C.slice(0, cEnEC);
-    // Intercalar E y C en serpentina de dos colas para máxima mezcla
     function intercalarDos(listaA, listaB, listaGrupos) {
       if (!listaGrupos.length) return;
-      // Combinar intercalando: A[0], B[0], A[1], B[1], ...
       const combinado = [];
       const maxLen = Math.max(listaA.length, listaB.length);
       for (let k = 0; k < maxLen; k++) {
@@ -7678,15 +7642,27 @@
       repartirSerpentina(combinado, listaGrupos);
     }
 
-    intercalarDos(E, cParaEC, particionGrupos.EC);
+    // Distribuir E puros
+    // Si gEC > 0: los primeros (gEpuroFinal * MAX) van a grupos E, el sobrante a EC
+    const eEnGruposPuros = gEpuroFinal * MAX_POR_GRUPO;
+    repartirSerpentina(E.slice(0, eEnGruposPuros), particionGrupos.E);
+    const eSobrante = E.slice(eEnGruposPuros); // sobrante E para grupos EC
 
-    // Grupos CI: mezclar I con la siguiente porción de C
-    const cParaCI = C.slice(cEnEC, cEnEC + cEnCI);
-    intercalarDos(I, cParaCI, particionGrupos.CI);
+    // Distribuir C puros (grupos enteros + sobrante C sin mezcla)
+    const cEnGruposPuros = cTotalPuro; // todos los C que van a grupos puros
+    repartirSerpentina(C.slice(0, cEnGruposPuros), particionGrupos.C);
 
-    // Grupos C puros: C restante
-    const cPuro = C.slice(cEnEC + cEnCI);
-    repartirSerpentina(cPuro, particionGrupos.C);
+    // Distribuir I puros
+    const iEnGruposPuros = gIpuroFinal * MAX_POR_GRUPO;
+    repartirSerpentina(I.slice(0, iEnGruposPuros), particionGrupos.I);
+    const iSobrante = I.slice(iEnGruposPuros);
+
+    // Distribuir mezclas (solo si hay grupos EC/CI)
+    const cParaECArr = C.slice(cTotalPuro, cTotalPuro + cParaEC);
+    intercalarDos(eSobrante, cParaECArr, particionGrupos.EC);
+
+    const cParaCIArr = C.slice(cTotalPuro + cParaEC, cTotalPuro + cParaEC + cParaCI);
+    intercalarDos(iSobrante, cParaCIArr, particionGrupos.CI);
 
     return asignacion;
   }
