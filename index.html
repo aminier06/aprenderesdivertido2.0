@@ -3277,6 +3277,8 @@
   let datosAsignacionEstudiantesGrupos = null;
   let filtrosAsignacionGrupos = { regional: "", distrito: "", centroSede: "" };
   let filtrosAsignacionEstudiantes = { regional: "", distrito: "", centroSede: "" };
+  // Mapa de nombre semántico → nombre del backend para traducir al guardar
+  let mapaGrupoSemanticoABackend = {};
 
   const itemsCoordinador = [
     ["item01", "Llega puntualmente y organiza la jornada junto al equipo docente."],
@@ -7311,6 +7313,13 @@
       mapaSemantico[normalizarTexto(g)] = gruposSemanticos[i] || gruposSemanticos[gruposSemanticos.length - 1];
     });
 
+    // Guardar el inverso (semántico → backend) para traducir al guardar
+    mapaGrupoSemanticoABackend = {};
+    grupos.forEach(function(g, i) {
+      const sem = gruposSemanticos[i] || gruposSemanticos[gruposSemanticos.length - 1];
+      mapaGrupoSemanticoABackend[normalizarTexto(sem)] = g;
+    });
+
     const opcionesGrupo = gruposSemanticos.map(function(g) {
       return `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`;
     }).join("");
@@ -7414,11 +7423,17 @@
     let sinAsignar = 0;
 
     document.querySelectorAll(".select-asignacion-estudiante").forEach(function(select) {
-      const grupo = normalizarTexto(select.value);
-      if (!grupo) sinAsignar++;
+      const valorSelect = normalizarTexto(select.value);
+      if (!valorSelect) {
+        sinAsignar++;
+        asignaciones.push({ idEstudiante: normalizarTexto(select.dataset.id), grupo: "" });
+        return;
+      }
+      // Traducir el nombre semántico al nombre que acepta el backend
+      const grupoBackend = mapaGrupoSemanticoABackend[valorSelect] || select.value;
       asignaciones.push({
         idEstudiante: normalizarTexto(select.dataset.id),
-        grupo: grupo
+        grupo: grupoBackend
       });
     });
 
@@ -7584,7 +7599,16 @@
     });
     const grupos = gruposProvisionales.map(function(gProv) { return mapaRenombrado[gProv]; });
 
-    mostrarModalAsignacionAutomatica(resultado, grupos);
+    // Guardar el mapa nombre-semántico → nombre-backend para traducir al guardar.
+    // gruposProvisionales[i] → mapaRenombrado[gProv] = nombreFinal
+    // gruposBackend[i] = nombre original que acepta el backend
+    mapaGrupoSemanticoABackend = {};
+    gruposProvisionales.forEach(function(gProv, i) {
+      const nombreFinal = mapaRenombrado[gProv];
+      mapaGrupoSemanticoABackend[normalizarTexto(nombreFinal)] = gruposBackend[i];
+    });
+
+    mostrarModalAsignacionAutomatica(resultado, grupos, mapaGrupoSemanticoABackend);
   }
 
   function calcularAsignacionHomogenea(grupos, estudiantes) {
@@ -7847,10 +7871,14 @@
     return { texto: "Mixto",                                                  color: "#ef4444" };
   }
 
-  function mostrarModalAsignacionAutomatica(asignacion, grupos) {
+  function mostrarModalAsignacionAutomatica(asignacion, grupos, mapaBackend) {
     // Eliminar modal anterior si existe
     const anterior = document.getElementById("modalAsignacionAuto");
     if (anterior) anterior.remove();
+
+    // Guardar asignación y mapa en variable temporal
+    window._asignacionAutoPendiente = asignacion;
+    window._mapaBackendPendiente = mapaBackend || {};
 
     let cardsHTML = "";
     grupos.forEach(function(g) {
@@ -7908,8 +7936,7 @@
       </div>
     `;
 
-    // Guardar asignación en variable temporal
-    window._asignacionAutoPendiente = asignacion;
+    // Guardar asignación en variable temporal (ya se asigna al inicio de la función)
 
     document.body.appendChild(modal);
 
@@ -7923,11 +7950,17 @@
     const modal = document.getElementById("modalAsignacionAuto");
     if (modal) modal.remove();
     window._asignacionAutoPendiente = null;
+    window._mapaBackendPendiente = null;
   }
 
   function aplicarAsignacionAutomatica() {
     const asignacion = window._asignacionAutoPendiente;
     if (!asignacion) return;
+
+    // Actualizar el mapa semántico→backend con los nombres por moda
+    if (window._mapaBackendPendiente) {
+      Object.assign(mapaGrupoSemanticoABackend, window._mapaBackendPendiente);
+    }
 
     // Los grupos ya tienen nombres semánticos (son las claves del objeto asignacion)
     const grupos = Object.keys(asignacion);
