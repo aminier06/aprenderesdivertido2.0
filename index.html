@@ -7359,10 +7359,12 @@
     const btn = document.getElementById("btnGuardarAsignacionEstudiantesGrupos");
     if (btn) btn.disabled = true;
 
-    // Google Apps Script solo acepta JSONP (GET). Para no superar el límite de URL
-    // (~2 KB), dividimos las asignaciones en lotes de 20 y los enviamos en serie.
+    // El backend espera e.parameter.payload como JSON: { cedulaCoordinador, asignaciones }.
+    // Para no superar el límite de URL de Google Apps Script (~2 KB), enviamos
+    // las asignaciones en lotes de 20, cada uno como un payload independiente.
+    // El backend procesa cada lote y escribe fila a fila en la hoja ESTUDIANTES.
     const LOTE = 20;
-    const totalLotes = Math.ceil(asignaciones.length / LOTE);
+    const totalLotes = Math.max(1, Math.ceil(asignaciones.length / LOTE));
     let loteActual = 0;
 
     function enviarLote() {
@@ -7370,17 +7372,19 @@
       const esUltimo = (loteActual === totalLotes - 1);
 
       if (totalLotes > 1) {
-        mensaje.textContent = "Guardando asignación de estudiantes… (" + (loteActual + 1) + " de " + totalLotes + ")";
+        mensaje.textContent = "Guardando\u2026 (" + (loteActual + 1) + " de " + totalLotes + ")";
       }
+
+      // Reconstruimos el objeto payload exactamente como el backend lo espera
+      const payload = JSON.stringify({
+        cedulaCoordinador: usuarioActual.cedula,
+        asignaciones: porcion
+      });
 
       llamarBackend(
         {
           accion: "guardarAsignacionEstudiantesGrupos",
-          cedulaCoordinador: usuarioActual.cedula,
-          esUltimLote: esUltimo ? "1" : "0",
-          lote: loteActual,
-          totalLotes: totalLotes,
-          asignaciones: JSON.stringify(porcion)
+          payload: payload
         },
         function(respuesta) {
           if (!respuesta.ok) {
@@ -7389,7 +7393,6 @@
             mensaje.className = "mensaje error";
             return;
           }
-
           if (esUltimo) {
             if (btn) btn.disabled = false;
             mensaje.textContent = respuesta.mensaje || "Asignación de estudiantes guardada correctamente.";
@@ -7402,33 +7405,6 @@
         },
         { timeout: 30000 }
       );
-    }
-
-    // Caso especial: lista vacía
-    if (asignaciones.length === 0) {
-      llamarBackend(
-        {
-          accion: "guardarAsignacionEstudiantesGrupos",
-          cedulaCoordinador: usuarioActual.cedula,
-          esUltimLote: "1",
-          lote: 0,
-          totalLotes: 1,
-          asignaciones: "[]"
-        },
-        function(respuesta) {
-          if (btn) btn.disabled = false;
-          if (respuesta.ok) {
-            mensaje.textContent = respuesta.mensaje || "Asignación guardada correctamente.";
-            mensaje.className = "mensaje ok";
-            cargarEstudiantesAsignacionGrupos();
-          } else {
-            mensaje.textContent = respuesta.mensaje || "No se pudo guardar la asignación.";
-            mensaje.className = "mensaje error";
-          }
-        },
-        { timeout: 30000 }
-      );
-      return;
     }
 
     enviarLote();
