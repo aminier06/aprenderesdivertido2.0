@@ -7529,11 +7529,61 @@
       return;
     }
 
-    // Convertir los nombres del backend ("Grupo 1", "Grupo 2"...) a nombres semánticos
-    // ANTES de pasarlos a calcularAsignacionHomogenea, para que trabaje con ellos directamente.
-    const grupos = construirGruposOperativos(gruposBackend.length);
+    // Paso 1: calcular con nombres provisionales (Exploradores, Creadores, Innovadores...)
+    const gruposProvisionales = construirGruposOperativos(gruposBackend.length);
+    const resultadoProvisional = calcularAsignacionHomogenea(gruposProvisionales, estudiantes);
 
-    const resultado = calcularAsignacionHomogenea(grupos, estudiantes);
+    // Paso 2: renombrar cada grupo según la moda real de nivelLengua de sus estudiantes.
+    // Si dos categorías empatan, gana la de mayor nivel (Innovador > Creador > Explorador).
+    // Si hay duplicados de nombre, se añade sufijo -1, -2, etc.
+    const NIVEL_JERARQUIA = { "innovador": 3, "creador": 2, "explorador": 1 };
+
+    function modaGrupo(lista) {
+      const cnt = { explorador: 0, creador: 0, innovador: 0 };
+      lista.forEach(function(e) {
+        const n = normalizarTexto(e.nivelLengua).toLowerCase();
+        if (cnt[n] !== undefined) cnt[n]++;
+        else cnt.creador++; // sin dato → Creador
+      });
+      // Ordenar por conteo desc, luego por jerarquía desc como desempate
+      return ["innovador", "creador", "explorador"].sort(function(a, b) {
+        if (cnt[b] !== cnt[a]) return cnt[b] - cnt[a];
+        return NIVEL_JERARQUIA[b] - NIVEL_JERARQUIA[a];
+      })[0];
+    }
+
+    function capitalizar(s) { return s.charAt(0).toUpperCase() + s.slice(1) + "es"; }
+    // "explorador" → "Exploradores", "creador" → "Creadores", "innovador" → "Innovadores"
+    const NOMBRE_CATEGORIA = { explorador: "Exploradores", creador: "Creadores", innovador: "Innovadores" };
+
+    // Contar cuántas veces aparece cada nombre base para asignar sufijos
+    const cuentaNombreBase = {};
+    gruposProvisionales.forEach(function(gProv) {
+      const lista = resultadoProvisional[gProv] || [];
+      const base = NOMBRE_CATEGORIA[modaGrupo(lista)] || "Creadores";
+      cuentaNombreBase[base] = (cuentaNombreBase[base] || 0) + 1;
+    });
+
+    const contadorNombre = {};
+    const mapaRenombrado = {}; // nombreProvisional → nombreFinal
+
+    gruposProvisionales.forEach(function(gProv) {
+      const lista = resultadoProvisional[gProv] || [];
+      const base = NOMBRE_CATEGORIA[modaGrupo(lista)] || "Creadores";
+      contadorNombre[base] = (contadorNombre[base] || 0) + 1;
+      const nombreFinal = cuentaNombreBase[base] === 1
+        ? base
+        : base + "-" + contadorNombre[base];
+      mapaRenombrado[gProv] = nombreFinal;
+    });
+
+    // Construir nuevo objeto asignacion con los nombres finales
+    const resultado = {};
+    gruposProvisionales.forEach(function(gProv) {
+      resultado[mapaRenombrado[gProv]] = resultadoProvisional[gProv] || [];
+    });
+    const grupos = gruposProvisionales.map(function(gProv) { return mapaRenombrado[gProv]; });
+
     mostrarModalAsignacionAutomatica(resultado, grupos);
   }
 
