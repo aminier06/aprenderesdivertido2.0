@@ -3282,11 +3282,45 @@
   // Mapa de nombre del backend → nombre semántico para mostrar al usuario
   let mapaGrupoBackendASemantico = {};
 
+  // Clave de localStorage para el mapa de grupos por sede
+  var LS_MAPA_GRUPOS = "campamento_mapaGrupos";
+
+  // Carga el mapa de una sede del localStorage
+  function cargarMapaGruposSede(centroSede) {
+    try {
+      const datos = JSON.parse(localStorage.getItem(LS_MAPA_GRUPOS) || "{}");
+      const entrada = datos[normalizarTexto(centroSede)] || {};
+      mapaGrupoBackendASemantico = entrada.bToS || {};
+      mapaGrupoSemanticoABackend = entrada.sToB || {};
+    } catch(e) {
+      mapaGrupoBackendASemantico = {};
+      mapaGrupoSemanticoABackend = {};
+    }
+  }
+
+  // Guarda el mapa de una sede en localStorage
+  function guardarMapaGruposSede(centroSede) {
+    try {
+      const datos = JSON.parse(localStorage.getItem(LS_MAPA_GRUPOS) || "{}");
+      datos[normalizarTexto(centroSede)] = {
+        bToS: mapaGrupoBackendASemantico,
+        sToB: mapaGrupoSemanticoABackend
+      };
+      localStorage.setItem(LS_MAPA_GRUPOS, JSON.stringify(datos));
+    } catch(e) {}
+  }
+
   // Devuelve el nombre visible (semántico) de un grupo dado su nombre del backend.
   // Si no hay traducción registrada, devuelve el valor original.
   function grupoLegible(grupoBackend) {
     if (!grupoBackend) return "";
     return mapaGrupoBackendASemantico[normalizarTexto(grupoBackend)] || grupoBackend;
+  }
+
+  // Devuelve el nombre de backend dado un nombre semántico (para enviar al servidor).
+  function grupoParaBackend(grupoSem) {
+    if (!grupoSem) return "";
+    return mapaGrupoSemanticoABackend[normalizarTexto(grupoSem)] || grupoSem;
   }
 
   const itemsCoordinador = [
@@ -4124,9 +4158,17 @@
         if (esFacilitador()) {
           const grupoUsuario = normalizarTexto(usuarioActual.grupo);
           if (grupoUsuario) {
-            asegurarOpcionGrupo(document.getElementById("grupoAsistencia"), grupoUsuario);
-            document.getElementById("grupoAsistencia").value = grupoUsuario;
-            document.getElementById("grupoAsistencia").disabled = true;
+            // Cargar el mapa de grupos de la sede del facilitador
+            cargarMapaGruposSede(usuarioActual.centroSede || "");
+            const grupoVisible = grupoLegible(usuarioActual.grupo) || usuarioActual.grupo;
+            const selectGrupo = document.getElementById("grupoAsistencia");
+            asegurarOpcionGrupo(selectGrupo, grupoUsuario);
+            // Actualizar etiqueta visible si hay mapa
+            Array.from(selectGrupo.options).forEach(function(op) {
+              if (normalizarTexto(op.value) === grupoUsuario) op.textContent = grupoVisible;
+            });
+            selectGrupo.value = grupoUsuario;
+            selectGrupo.disabled = true;
             cargarEstudiantes();
           } else {
             mensaje.textContent = "Este facilitador no tiene grupo asignado en la hoja USUARIOS.";
@@ -4260,6 +4302,35 @@
       document.getElementById("datosSedeAsistencia").classList.add("oculto");
       document.getElementById("datosSedeAsistencia").innerHTML = "";
       return;
+    }
+
+    // Cargar el mapa de grupos de esta sede desde localStorage
+    cargarMapaGruposSede(centro);
+
+    // Poblar el select de grupos con los nombres semánticos
+    const selectGrupo = document.getElementById("grupoAsistencia");
+    const gruposBackendSede = sedeSeleccionadaAsistencia.grupos || construirGruposOperativos(
+      Number(sedeSeleccionadaAsistencia.gruposEsperados || 0) ||
+      Math.ceil(Number(sedeSeleccionadaAsistencia.cuota || 0) / 25)
+    );
+
+    selectGrupo.innerHTML = '<option value="">Seleccione un grupo</option>';
+
+    const tieneMapaSede = Object.keys(mapaGrupoBackendASemantico).length > 0;
+    if (!tieneMapaSede) {
+      // No se ha hecho asignación de estudiantes: mostrar aviso y bloquear selección de grupo
+      selectGrupo.disabled = true;
+      const mensaje = document.getElementById("mensajeAsistencia");
+      mensaje.textContent = "Primero debe completar la asignación de estudiantes a grupos para esta sede.";
+      mensaje.className = "mensaje error";
+    } else {
+      selectGrupo.disabled = false;
+      gruposBackendSede.forEach(function(gBackend) {
+        const opt = document.createElement("option");
+        opt.value = gBackend; // valor que va al backend
+        opt.textContent = grupoLegible(gBackend); // nombre legible para el usuario
+        selectGrupo.appendChild(opt);
+      });
     }
 
     document.getElementById("datosSedeAsistencia").classList.remove("oculto");
@@ -6741,6 +6812,10 @@
     } else {
       filtrosAsignacionGrupos = { regional: "", distrito: "", centroSede: "" };
     }
+
+    // Cargar el mapa de grupos de la sede del usuario actual (si aplica)
+    if (usuarioActual.centroSede) cargarMapaGruposSede(usuarioActual.centroSede);
+
     const bloqueFiltrosFac = document.getElementById("bloqueFiltrosAsignacionGrupos");
     if (bloqueFiltrosFac) bloqueFiltrosFac.classList.toggle("oculto", !modoConsultaAsignaciones());
     document.getElementById("resumenAsignacionGrupos").innerHTML = "";
@@ -6831,6 +6906,21 @@
     }
 
     document.getElementById("bloqueCuotaManual").classList.add("oculto");
+
+    // Cargar el mapa de esta sede específica (puede diferir del usuario actual si es modo consulta)
+    const centroSedeFac = sede.centroSede || usuarioActual.centroSede || "";
+    if (centroSedeFac) cargarMapaGruposSede(centroSedeFac);
+
+    const tieneMapaFac = Object.keys(mapaGrupoBackendASemantico).length > 0;
+    if (!tieneMapaFac && puedeModificarAsignaciones()) {
+      const alerta = document.getElementById("alertaAsignacionGrupos");
+      alerta.classList.remove("oculto");
+      alerta.innerHTML = "⚠️ Debe completar primero la <strong>asignación de estudiantes a grupos</strong> antes de asignar facilitadores. Los grupos recibirán su nombre definitivo al hacer esa asignación.";
+      document.getElementById("tablaAsignacionGrupos").classList.add("oculto");
+      document.getElementById("btnGuardarAsignacionGrupos").classList.add("oculto");
+      return;
+    }
+
     renderizarTablaAsignacion(datosAsignacionGrupos.grupos || construirGruposOperativos(gruposEsperados));
   }
 
@@ -6969,10 +7059,11 @@
       const asignados = asignadosPorGrupo[grupo] || [];
       const cedula1 = asignados[0] || "";
       const cedula2 = asignados[1] || "";
+      const nombreVisible = grupoLegible(grupo) || grupo;
 
       html += `
         <tr>
-          <td><strong>${escapeHtml(grupo)}</strong></td>
+          <td><strong>${escapeHtml(nombreVisible)}</strong></td>
           <td>
             <select class="select-asignacion-grupo" data-grupo="${escapeHtml(grupo)}" data-orden="1">
               <option value="">Seleccione facilitador</option>
@@ -7365,6 +7456,13 @@
       mapaGrupoBackendASemantico[normalizarTexto(g)] = nombreSem;
     });
 
+    // Persistir el mapa para que otros módulos lo usen sin depender de si el usuario
+    // visitó este módulo en la misma sesión
+    const centroSede = (datosAsignacionEstudiantesGrupos && datosAsignacionEstudiantesGrupos.sede)
+      ? datosAsignacionEstudiantesGrupos.sede.centroSede
+      : (usuarioActual && usuarioActual.centroSede);
+    if (centroSede) guardarMapaGruposSede(centroSede);
+
     // Opciones del select usando los nombres semánticos calculados
     const gruposSemanticos = grupos.map(function(g) { return mapaSemantico[normalizarTexto(g)]; });
     // Deduplicar por si el usuario tiene grupos con el mismo nombre semántico desde el backend
@@ -7657,6 +7755,10 @@
       mapaGrupoSemanticoABackend[normalizarTexto(nombreFinal)] = gruposBackend[i];
       mapaGrupoBackendASemantico[normalizarTexto(gruposBackend[i])] = nombreFinal;
     });
+
+    // Persistir el mapa para que asistencia y facilitadores lo usen
+    const centroSedeAuto = usuarioActual && usuarioActual.centroSede;
+    if (centroSedeAuto) guardarMapaGruposSede(centroSedeAuto);
 
     mostrarModalAsignacionAutomatica(resultado, grupos, mapaGrupoSemanticoABackend);
   }
