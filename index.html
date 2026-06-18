@@ -1457,6 +1457,16 @@
       flex-wrap: wrap;
     }
 
+    /* ▼ CORRECCIÓN: .db-area-principal es la columna "1fr" del grid
+       .db-layout (menú lateral + contenido). Sin min-width:0, un hijo de
+       grid toma como ancho mínimo implícito el de su contenido más ancho
+       (aquí, las tarjetas de .db-graficos-grid con minmax(270px, 1fr)).
+       Eso podía empujar la columna más allá del espacio disponible y hacer
+       que las tarjetas de gráficos quedaran pegadas o cortadas contra el
+       borde derecho del fondo de la página. min-width:0 le permite al grid
+       encogerla correctamente al ancho real disponible. */
+    .db-area-principal { min-width: 0; }
+
     .db-titulo-activo { margin: 0 0 3px; font-size: 18px; font-weight: 700; color: var(--texto); }
     .db-descripcion-activa { margin: 0; color: var(--texto-3); font-size: 12.5px; }
 
@@ -2329,14 +2339,6 @@
           <label for="grupoDashboard">Grupo</label>
           <select id="grupoDashboard">
             <option value="">Todos los grupos</option>
-            <option value="Exploradores">Exploradores</option>
-            <option value="Exploradores-2">Exploradores-2</option>
-            <option value="Exploradores-3">Exploradores-3</option>
-            <option value="Creadores">Creadores</option>
-            <option value="Creadores-2">Creadores-2</option>
-            <option value="Creadores-3">Creadores-3</option>
-            <option value="Innovadores">Innovadores</option>
-            <option value="Innovadores-2">Innovadores-2</option>
           </select>
         </div>
         <div class="db-filtro-item">
@@ -4415,13 +4417,11 @@
     document.getElementById("fechaFinDashboard").value = hoy;
 
     document.getElementById("grupoDashboard").disabled = false;
-    document.getElementById("grupoDashboard").value = "";
-
-    if (esFacilitador()) {
-      const grupoUsuario = normalizarTexto(usuarioActual.grupo);
-      document.getElementById("grupoDashboard").value = grupoUsuario;
-      document.getElementById("grupoDashboard").disabled = true;
-    }
+    document.getElementById("grupoDashboard").innerHTML = '<option value="">Todos los grupos</option>';
+    // La preselección/bloqueo para facilitadores y la traducción de nombres
+    // se resuelven en poblarSelectGrupoDashboard(), una vez que se conoce la
+    // sede (la propia, si es facilitador/coordinador, o la elegida en los
+    // filtros). Aquí solo se deja el select en su estado neutro de partida.
 
     cargarSedesPermitidasDashboard();
   }
@@ -4473,6 +4473,17 @@
     });
 
     llenarSelectorRegionalesDashboard(sedesDashboard);
+
+    // Camino de respaldo: no hubo catálogo de sedes desde el backend, así que
+    // se construye una "sede mínima" a partir del perfil del usuario. Esa
+    // sede no trae gruposEsperados ni cuota, por lo que poblarSelectGrupoDashboard
+    // caerá a construirGruposOperativos() con los grupos detectados, sin
+    // nombres semánticos si no hay mapa guardado para ese centro — mejor eso
+    // que dejar el select con las opciones fijas anteriores.
+    if (sedesDashboard.length === 1) {
+      sedeSeleccionadaDashboard = sedesDashboard[0];
+      poblarSelectGrupoDashboard();
+    }
   }
 
   function llenarSelectorRegionalesDashboard(sedes) {
@@ -4574,6 +4585,52 @@
     }) || null;
 
     limpiarResultadosDashboard();
+    poblarSelectGrupoDashboard();
+  }
+
+  // ▼ MEJORA: antes este <select> tenía nombres de grupo escritos a mano en
+  // el HTML (Exploradores, Exploradores-2, etc.), que no necesariamente
+  // coincidían con los nombres reales que resultó teniendo cada sede tras su
+  // asignación. Ahora se reconstruye igual que en Pase de lista e
+  // Incidencias: el "value" de cada opción es el nombre crudo que entiende
+  // el backend ("Grupo 1", "Grupo 2"...) y el texto visible es la traducción
+  // semántica de esa sede en particular, tomada del mismo mapa que ya usan
+  // los otros módulos. Sin sede seleccionada no hay un mapa fiable que
+  // aplicar (cada sede puede traducir distinto), así que el filtro queda
+  // limitado a "Todos los grupos".
+  function poblarSelectGrupoDashboard() {
+    const selectGrupo = document.getElementById("grupoDashboard");
+    const eraFacilitador = esFacilitador();
+
+    if (!sedeSeleccionadaDashboard) {
+      selectGrupo.innerHTML = '<option value="">Todos los grupos</option>';
+      selectGrupo.disabled = eraFacilitador; // se resuelve más abajo si aplica
+      return;
+    }
+
+    const centro = sedeSeleccionadaDashboard.centroSede || "";
+    cargarMapaGruposSede(centro);
+
+    const gruposBackendSede = sedeSeleccionadaDashboard.grupos || construirGruposOperativos(
+      Number(sedeSeleccionadaDashboard.gruposEsperados || 0) ||
+      Math.ceil(Number(sedeSeleccionadaDashboard.cuota || 0) / 25)
+    );
+
+    selectGrupo.innerHTML = '<option value="">Todos los grupos</option>';
+    gruposBackendSede.forEach(function(gBackend) {
+      const opt = document.createElement("option");
+      opt.value = gBackend; // valor que se envía al backend
+      opt.textContent = grupoLegible(gBackend); // nombre legible para el usuario
+      selectGrupo.appendChild(opt);
+    });
+
+    if (eraFacilitador) {
+      const grupoUsuario = normalizarTexto(usuarioActual.grupo);
+      selectGrupo.value = grupoUsuario;
+      selectGrupo.disabled = true;
+    } else {
+      selectGrupo.disabled = false;
+    }
   }
 
   function cargarDashboardSeleccionado() {
@@ -4795,7 +4852,7 @@
             <td>${document.getElementById("regionalDashboard").value || "Todos"}</td>
             <td>${document.getElementById("distritoDashboard").value || "Todos"}</td>
             <td>${document.getElementById("sedeDashboard").value || "Todas"}</td>
-            <td>${document.getElementById("grupoDashboard").value || "Todos"}</td>
+            <td>${grupoLegible(document.getElementById("grupoDashboard").value) || "Todos"}</td>
             <td>${document.getElementById("fechaInicioDashboard").value || ""}</td>
             <td>${document.getElementById("fechaFinDashboard").value || ""}</td>
           </tr>
@@ -7814,8 +7871,20 @@
       mapaGrupoBackendASemantico[normalizarTexto(gruposBackend[i])] = nombreFinal;
     });
 
-    // Persistir el mapa para que asistencia y facilitadores lo usen
-    const centroSedeAuto = usuarioActual && usuarioActual.centroSede;
+    // Persistir el mapa para que asistencia y facilitadores lo usen.
+    // ▼ CORRECCIÓN: antes se usaba usuarioActual.centroSede, que es la sede
+    // del PERFIL de quien inició sesión. Eso funciona si un coordinador
+    // reparte su propia sede, pero falla cuando un administrador, técnico
+    // nacional, regional o distrital ejecuta el reparto automático para la
+    // sede de OTRA persona (su propio centroSede está vacío o es distinto).
+    // En ese caso el mapa se guardaba bajo la clave equivocada (o no se
+    // guardaba), y por eso Pase de lista e Incidencias mostraban "Grupo 1"
+    // en vez del nombre semántico, aunque la asignación sí se hubiera hecho.
+    // Ahora se usa el centroSede de la SEDE que realmente se está repartiendo
+    // (datosAsignacionEstudiantesGrupos.sede.centroSede), que es la misma
+    // fuente que ya usan correctamente otras partes de este módulo.
+    const centroSedeAuto = (datosAsignacionEstudiantesGrupos && datosAsignacionEstudiantesGrupos.sede && datosAsignacionEstudiantesGrupos.sede.centroSede)
+      || (usuarioActual && usuarioActual.centroSede);
     if (centroSedeAuto) guardarMapaGruposSede(centroSedeAuto);
 
     mostrarModalAsignacionAutomatica(resultado, grupos, mapaGrupoSemanticoABackend);
