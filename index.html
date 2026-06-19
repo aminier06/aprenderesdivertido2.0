@@ -2724,6 +2724,7 @@
       </div>
       <div class="acciones-usuarios">
         <button type="button" onclick="listarUsuariosAdmin()">Actualizar listado</button>
+        <button type="button" class="btn-secundario" onclick="reactivarUsuariosInactivosFiltradosAdmin()">Reactivar inactivos filtrados</button>
       </div>
     </div>
 
@@ -9905,7 +9906,9 @@
 
     const usuarios = usuariosAdminFiltrados();
     if (resumen) {
-      resumen.textContent = usuarios.length + " usuario(s) mostrado(s) de " + usuariosAdminCache.length + " registrado(s).";
+      const inactivosVisibles = usuarios.filter(function(u) { return normalizarRol(u.estado) !== "activo"; }).length;
+      const inactivosTotales = usuariosAdminCache.filter(function(u) { return normalizarRol(u.estado) !== "activo"; }).length;
+      resumen.textContent = usuarios.length + " usuario(s) mostrado(s) de " + usuariosAdminCache.length + " registrado(s). Inactivos visibles: " + inactivosVisibles + ". Inactivos totales: " + inactivosTotales + ".";
     }
 
     if (!usuarios.length) {
@@ -10104,6 +10107,62 @@
         }
       },
       { timeout: 16000 }
+    );
+  }
+
+
+  function reactivarUsuariosInactivosFiltradosAdmin() {
+    if (!esAdministradorReal()) return;
+
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    const filtro = document.getElementById("filtroUsuariosAdmin");
+    const textoFiltro = filtro ? String(filtro.value || "").trim() : "";
+    const usuarios = usuariosAdminFiltrados().filter(function(u) {
+      return normalizarRol(u.estado) !== "activo";
+    });
+
+    if (!usuarios.length) {
+      if (mensaje) {
+        mensaje.textContent = "No hay usuarios inactivos en el listado actual para reactivar.";
+        mensaje.className = "mensaje";
+      }
+      return;
+    }
+
+    const alcance = textoFiltro
+      ? "los usuarios inactivos que coinciden con el filtro actual"
+      : "todos los usuarios inactivos registrados";
+
+    if (!confirm("Se reactivarán " + usuarios.length + " usuario(s) inactivo(s) de " + alcance + ". ¿Desea continuar?")) return;
+
+    if (mensaje) {
+      mensaje.textContent = "Reactivando usuarios inactivos...";
+      mensaje.className = "mensaje";
+    }
+
+    llamarBackendPost(
+      {
+        accion: "reactivarUsuariosMasivo",
+        payload: JSON.stringify({
+          cedulaAdmin: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
+          cedulas: usuarios.map(function(u) { return u.cedula; })
+        })
+      },
+      function(resp) {
+        if (resp && resp.ok) {
+          if (mensaje) {
+            mensaje.textContent = resp.mensaje || "Usuarios reactivados correctamente.";
+            mensaje.className = "mensaje ok";
+          }
+          listarUsuariosAdmin();
+        } else {
+          if (mensaje) {
+            mensaje.textContent = (resp && resp.mensaje) || "No se pudo completar la reactivación masiva.";
+            mensaje.className = "mensaje error";
+          }
+        }
+      },
+      { timeout: 30000 }
     );
   }
 
