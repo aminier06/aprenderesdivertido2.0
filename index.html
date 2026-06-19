@@ -3343,17 +3343,17 @@
           <input type="text" id="inscDistrito" readonly>
         </div>
         <div>
-          <label for="inscNivelLengua">Nivel Lengua</label>
-          <input type="text" id="inscNivelLengua" readonly>
+          <label for="inscNacionalidad">Nacionalidad</label>
+          <input type="text" id="inscNacionalidad" readonly>
         </div>
         <div>
-          <label for="inscNivelMat">Nivel Matemática</label>
-          <input type="text" id="inscNivelMat" readonly>
+          <label for="inscSexo">Sexo</label>
+          <input type="text" id="inscSexo" readonly>
         </div>
       </div>
 
       <h3 style="margin-top:18px;">Centro sede de inscripción</h3>
-      <p class="nota">Confirme o elija el centro sede donde quedará inscrito el estudiante.</p>
+      <p class="nota">Elija el centro sede donde quedará inscrito el estudiante.</p>
       <div class="form-grid-3">
         <div>
           <label for="inscCentro">Centro sede</label>
@@ -3891,8 +3891,11 @@
       callback({ ok: false, timeout: true, mensaje: "El servidor tardó demasiado en responder. Verifica tu conexión e intenta de nuevo." });
     }, timeout);
 
-    var qs = Object.keys(params)
-      .map(function(k) { return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); })
+    var v = (typeof datosVistaSimulada === "function") ? datosVistaSimulada() : null;
+    var paramsFinales = v ? Object.assign({}, params, v) : params;
+
+    var qs = Object.keys(paramsFinales)
+      .map(function(k) { return encodeURIComponent(k) + "=" + encodeURIComponent(paramsFinales[k]); })
       .join("&");
     var script = document.createElement("script");
     script.onerror = function() {
@@ -7839,6 +7842,31 @@
     return esAdministradorReal() && !!localStorage.getItem("usuarioCampamentoVista") && !esAdministrador();
   }
 
+  // ── VISTA SIMULADA → BACKEND ──────────────────────────────────────────────
+  // Cuando el administrador "asume" otro rol, eso antes solo vivía en el
+  // navegador: el backend siempre resolvía el usuario real por cédula y, para
+  // un administrador, eso significaba "ver todo el país" en vez de "ver como
+  // este coordinador". Esto rompía módulos como asignación de estudiantes y de
+  // grupos, donde el comportamiento depende del rol y la sede EXACTOS.
+  // Estas funciones envían la vista simulada al backend para que la respete,
+  // igual que ya la respeta esta pantalla.
+  function datosVistaSimulada() {
+    if (!esModoVistaSimulada() || !usuarioActual) return null;
+    return {
+      vistaRol: usuarioActual.rol || "",
+      vistaRegional: usuarioActual.regional || "",
+      vistaDistrito: usuarioActual.distrito || "",
+      vistaCentroSede: usuarioActual.centroSede || "",
+      vistaGrupo: usuarioActual.grupo || ""
+    };
+  }
+
+  function vistaQueryString() {
+    var v = datosVistaSimulada();
+    if (!v) return "";
+    return Object.keys(v).map(function(k) { return "&" + k + "=" + encodeURIComponent(v[k]); }).join("");
+  }
+
   function modoConsultaAsignaciones() {
     return (puedeConsultarAsignaciones(usuarioActual) && !puedeModificarAsignaciones()) || esModoVistaSimulada();
   }
@@ -8017,7 +8045,8 @@
     const script = document.createElement("script");
     let url = URL_SCRIPT
       + "?accion=facilitadoresSede"
-      + "&cedula=" + encodeURIComponent(usuarioActual.cedula);
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + vistaQueryString();
 
     if (modoConsultaAsignaciones()) {
       url += "&filtroRegional=" + encodeURIComponent(filtrosAsignacionGrupos.regional || "")
@@ -8368,6 +8397,7 @@
     script.src = URL_SCRIPT
       + "?accion=guardarAsignacionGrupos"
       + "&payload=" + encodeURIComponent(JSON.stringify(payload))
+      + vistaQueryString()
       + "&callback=" + callbackName;
 
     document.body.appendChild(script);
@@ -8436,7 +8466,8 @@
     const script = document.createElement("script");
     let url = URL_SCRIPT
       + "?accion=estudiantesAsignacionGrupos"
-      + "&cedula=" + encodeURIComponent(usuarioActual.cedula);
+      + "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + vistaQueryString();
 
     if (modoConsultaAsignaciones()) {
       url += "&filtroRegional=" + encodeURIComponent(filtrosAsignacionEstudiantes.regional || "")
@@ -9455,12 +9486,11 @@
         document.getElementById("inscGrado").value = e.grado || "";
         document.getElementById("inscRegional").value = e.regional || "";
         document.getElementById("inscDistrito").value = e.distrito || "";
-        document.getElementById("inscNivelLengua").value = e.nivelLengua || "";
-        document.getElementById("inscNivelMat").value = e.nivelMat || "";
+        document.getElementById("inscNacionalidad").value = e.nacionalidad || "";
+        document.getElementById("inscSexo").value = e.sexo || "";
 
+        // El catálogo no trae centro sede: el técnico la elige entre las de su regional.
         poblarSelectSedesInscripcion(e.regional);
-        // Preseleccionar la sede que trae el catálogo, si está disponible.
-        if (e.centroSede) asegurarOpcionSedeInscripcion(e.centroSede);
 
         bloqueDatos.classList.remove("oculto");
 
@@ -9543,7 +9573,7 @@
   }
 
   function limpiarInscripcion() {
-    const ids = ["inscID","inscNombre","inscGrado","inscRegional","inscDistrito","inscNivelLengua","inscNivelMat"];
+    const ids = ["inscID","inscNombre","inscGrado","inscRegional","inscDistrito","inscNacionalidad","inscSexo"];
     ids.forEach(function(x){ const el = document.getElementById(x); if (el) el.value = ""; });
     const sel = document.getElementById("inscCentro");
     if (sel) sel.innerHTML = '<option value="">Seleccione el centro sede</option>';
