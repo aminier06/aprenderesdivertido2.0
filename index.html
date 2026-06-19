@@ -8507,23 +8507,6 @@
       <div class="dato-asignacion"><span>Sin asignar</span><strong id="totalEstudiantesSinAsignar">${sinAsignar}</strong></div>
     `;
 
-    // ── DIAGNÓSTICO TEMPORAL (quitar cuando se resuelva) ──────────────────
-    if (datosAsignacionEstudiantesGrupos.debug) {
-      const d = datosAsignacionEstudiantesGrupos.debug;
-      document.getElementById("resumenAsignacionEstudiantesGrupos").innerHTML += `
-        <div class="dato-asignacion" style="border-color:#c0392b; grid-column: 1 / -1;">
-          <span>DIAGNÓSTICO (temporal)</span>
-          <strong style="font-size:14px; line-height:1.6;">
-            centroSede del usuario: "${escapeHtml(d.centroSedeUsuario || "")}"<br>
-            Filas leídas de ESTUDIANTES: ${d.totalFilasLeidasDeEstudiantes}<br>
-            Coinciden con esa sede (texto exacto): ${d.coincidenCentroExacto}<br>
-            Pasan el filtro de permiso: ${d.pasanFiltroPermiso}<br>
-            Pasan el filtro de Estado=Activo: ${d.pasanFiltroEstado}
-          </strong>
-        </div>
-      `;
-    }
-    // ────────────────────────────────────────────────────────────────────
 
     if (!grupos.length) {
       const alerta = document.getElementById("alertaAsignacionEstudiantesGrupos");
@@ -8562,24 +8545,6 @@
       <div class="dato-asignacion"><span>Asignados</span><strong>${asignados}</strong></div>
       <div class="dato-asignacion"><span>Pendientes</span><strong>${sinAsignar}</strong></div>
     `;
-
-    // ── DIAGNÓSTICO TEMPORAL (quitar cuando se resuelva) ──────────────────
-    if (datosAsignacionEstudiantesGrupos.debug) {
-      const d = datosAsignacionEstudiantesGrupos.debug;
-      document.getElementById("resumenAsignacionEstudiantesGrupos").innerHTML += `
-        <div class="dato-asignacion" style="border-color:#c0392b; grid-column: 1 / -1;">
-          <span>DIAGNÓSTICO (temporal)</span>
-          <strong style="font-size:14px; line-height:1.6;">
-            centroSede del usuario: "${escapeHtml(d.centroSedeUsuario || "")}"<br>
-            Filas leídas de ESTUDIANTES: ${d.totalFilasLeidasDeEstudiantes}<br>
-            Coinciden con esa sede (texto exacto): ${d.coincidenCentroExacto}<br>
-            Pasan el filtro de permiso: ${d.pasanFiltroPermiso}<br>
-            Pasan el filtro de Estado=Activo: ${d.pasanFiltroEstado}
-          </strong>
-        </div>
-      `;
-    }
-    // ────────────────────────────────────────────────────────────────────
 
     const tabla = document.getElementById("tablaAsignacionEstudiantesGrupos");
 
