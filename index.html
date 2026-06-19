@@ -5851,6 +5851,16 @@
       return;
     }
 
+    if (dashboardActual === "evaluaciones") {
+      cargarDashboardEvaluaciones();
+      return;
+    }
+
+    if (dashboardActual === "acompanamientos") {
+      cargarDashboardAcompanamientos();
+      return;
+    }
+
     mostrarMatrizDashboardBasica(dashboardActual);
   }
 
@@ -6078,6 +6088,306 @@
     };
 
     return nombres[tipo] || "Dashboard";
+  }
+
+  function parametrosDashboardComoQuery() {
+    return "&cedula=" + encodeURIComponent(usuarioActual.cedula)
+      + "&regional=" + encodeURIComponent(document.getElementById("regionalDashboard").value)
+      + "&distrito=" + encodeURIComponent(document.getElementById("distritoDashboard").value)
+      + "&centroSede=" + encodeURIComponent(document.getElementById("sedeDashboard").value)
+      + "&grupo=" + encodeURIComponent(document.getElementById("grupoDashboard").value)
+      + "&fechaInicio=" + encodeURIComponent(document.getElementById("fechaInicioDashboard").value)
+      + "&fechaFin=" + encodeURIComponent(document.getElementById("fechaFinDashboard").value)
+      + (typeof vistaQueryString === "function" ? vistaQueryString() : "");
+  }
+
+  function cargarDashboardEvaluaciones() {
+    const mensaje = document.getElementById("mensajeDashboard");
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    limpiarResultadosDashboard();
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    mostrarSpinner("mensajeDashboard", "Cargando evaluaciones...");
+    const callbackName = "callbackDashboardEvaluaciones_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      mensaje.textContent = "";
+      mensaje.className = "mensaje";
+
+      if (respuesta.ok) {
+        mostrarDashboardEvaluaciones(respuesta.evaluaciones || []);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo cargar el dashboard de evaluaciones.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=dashboardEvaluaciones"
+      + parametrosDashboardComoQuery()
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function mostrarDashboardEvaluaciones(evaluaciones) {
+    const total = evaluaciones.length;
+    const porTipo = contarPorCampoDashboard(evaluaciones, "tipoPrueba");
+    const porResultado = contarPorCampoDashboard(evaluaciones, "grupoResultado");
+    const porFecha = contarPorCampoDashboard(evaluaciones, "fechaEvaluacion");
+    const porSede = ordenarConteoDashboard(contarPorCampoDashboard(evaluaciones, "centroSede"), 10);
+    const fechas = Object.keys(porFecha).sort();
+
+    const lengua = porTipo.LENGUA || porTipo.Lengua || porTipo["Lengua Española"] || 0;
+    const matematica = porTipo.MATEMATICA || porTipo.Matemática || porTipo.Matematica || 0;
+    const exploradores = porResultado.Explorador || porResultado.Exploradores || 0;
+    const creadores = porResultado.Creador || porResultado.Creadores || 0;
+    const innovadores = porResultado.Innovador || porResultado.Innovadores || 0;
+
+    const kpis = [
+      { icono: "📝", label: "Evaluaciones", valor: total, color: "#059669" },
+      { icono: "📘", label: "Lengua", valor: lengua, color: "#2563eb" },
+      { icono: "➗", label: "Matemática", valor: matematica, color: "#7c3aed" },
+      { icono: "🧭", label: "Exploradores", valor: exploradores, color: "#d97706" },
+      { icono: "🛠️", label: "Creadores", valor: creadores, color: "#0891b2" },
+      { icono: "🚀", label: "Innovadores", valor: innovadores, color: "#16a34a" }
+    ];
+
+    document.getElementById("resumenDashboard").innerHTML = kpis.map(function(k) {
+      return `<div class="db-kpi-card" style="border-left:5px solid ${k.color}">
+        <span class="db-kpi-icono">${k.icono}</span>
+        <div>
+          <div class="db-kpi-label">${k.label}</div>
+          <div class="db-kpi-valor" style="color:${k.color}">${k.valor}</div>
+        </div>
+      </div>`;
+    }).join("");
+
+    mostrarBloqueGraficosDashboard();
+    configurarTitulosGraficosDashboard("evaluaciones");
+
+    crearGraficoDashboard(
+      "graficoDashboard1",
+      "bar",
+      Object.keys(porResultado),
+      [{ label: "Evaluaciones", data: Object.values(porResultado), backgroundColor: "#059669", borderRadius: 6 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard2",
+      "bar",
+      Object.keys(porTipo),
+      [{ label: "Evaluaciones", data: Object.values(porTipo), backgroundColor: "#2563eb", borderRadius: 6 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard3",
+      "line",
+      fechas,
+      [{ label: "Evaluaciones", data: fechas.map(function(f) { return porFecha[f]; }), borderColor: "#059669", backgroundColor: "rgba(5,150,105,0.14)", fill: true, tension: 0.35 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard4",
+      "bar",
+      porSede.map(function(item) { return item.etiqueta; }),
+      [{ label: "Evaluaciones", data: porSede.map(function(item) { return item.valor; }), backgroundColor: "#7c3aed", borderRadius: 6 }],
+      { indexAxis: "y", scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+    );
+
+    const matriz = document.getElementById("dashboardMatrizResultados");
+    matriz.classList.remove("oculto");
+
+    if (!evaluaciones || evaluaciones.length === 0) {
+      matriz.innerHTML = "<p>No hay evaluaciones para los filtros seleccionados.</p>";
+      return;
+    }
+
+    let html = "<table>";
+    html += "<thead><tr>";
+    html += "<th>Fecha</th><th>Tipo</th><th>Estudiante</th><th>Centro sede</th><th>Grupo operativo</th><th>Resultado</th><th>Satisfactorios</th><th>Puntuación</th>";
+    html += "</tr></thead><tbody>";
+
+    evaluaciones.slice(0, 300).forEach(function(e) {
+      html += "<tr>";
+      html += `<td>${e.fechaEvaluacion || ""}</td>`;
+      html += `<td>${e.tipoPrueba || ""}</td>`;
+      html += `<td>${e.nombreEstudiante || ""}<span class="texto-pequeno">${e.idEstudiante || ""}</span></td>`;
+      html += `<td>${e.centroSede || ""}</td>`;
+      html += `<td>${grupoLegible(e.grupo) || ""}</td>`;
+      html += `<td>${e.grupoResultado || ""}</td>`;
+      html += `<td>${e.cantidadSatisfactorios ?? ""}</td>`;
+      html += `<td>${e.puntuacionTotal || ""}</td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    if (evaluaciones.length > 300) html += `<p class="nota">Se muestran los primeros 300 registros de ${evaluaciones.length} encontrados.</p>`;
+    matriz.innerHTML = html;
+  }
+
+  function cargarDashboardAcompanamientos() {
+    const mensaje = document.getElementById("mensajeDashboard");
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
+    limpiarResultadosDashboard();
+
+    if (!usuarioActual) {
+      mensaje.textContent = "Debe iniciar sesión.";
+      mensaje.classList.add("error");
+      return;
+    }
+
+    mostrarSpinner("mensajeDashboard", "Cargando acompañamientos...");
+    const callbackName = "callbackDashboardAcompanamientos_" + Date.now();
+
+    window[callbackName] = function(respuesta) {
+      mensaje.textContent = "";
+      mensaje.className = "mensaje";
+
+      if (respuesta.ok) {
+        mostrarDashboardAcompanamientos(respuesta.acompanamientos || []);
+      } else {
+        mensaje.textContent = respuesta.mensaje || "No se pudo cargar el dashboard de acompañamientos.";
+        mensaje.classList.add("error");
+      }
+
+      delete window[callbackName];
+      script.remove();
+    };
+
+    const script = document.createElement("script");
+    script.src = URL_SCRIPT
+      + "?accion=dashboardAcompanamientos"
+      + parametrosDashboardComoQuery()
+      + "&callback=" + callbackName;
+
+    document.body.appendChild(script);
+  }
+
+  function clasificarCumplimientoDashboard(valor) {
+    const n = Number(valor || 0);
+    if (n >= 80) return "Alto (80%-100%)";
+    if (n >= 60) return "Medio (60%-79%)";
+    if (n > 0) return "Bajo (<60%)";
+    return "Sin dato";
+  }
+
+  function mostrarDashboardAcompanamientos(acompanamientos) {
+    const total = acompanamientos.length;
+    const porTipo = contarPorCampoDashboard(acompanamientos, "tipoAcompanamiento");
+    const porSeguimiento = contarPorCampoDashboard(acompanamientos, "estadoSeguimiento");
+    const porSede = ordenarConteoDashboard(contarPorCampoDashboard(acompanamientos, "centroSede"), 10);
+    const porCumplimiento = {};
+    let sumaCumplimiento = 0;
+    let conCumplimiento = 0;
+    let requiereSeguimiento = 0;
+
+    acompanamientos.forEach(function(a) {
+      const bucket = clasificarCumplimientoDashboard(a.porcentajeCumplimiento);
+      porCumplimiento[bucket] = (porCumplimiento[bucket] || 0) + 1;
+      const pct = Number(a.porcentajeCumplimiento || 0);
+      if (pct > 0) {
+        sumaCumplimiento += pct;
+        conCumplimiento++;
+      }
+      const req = normalizarTexto(a.requiereSeguimiento).toLowerCase();
+      if (req === "sí" || req === "si") requiereSeguimiento++;
+    });
+
+    const promedio = conCumplimiento > 0 ? Math.round(sumaCumplimiento / conCumplimiento) : 0;
+    const coord = porTipo["Coordinador de sede"] || porTipo.Coordinador || 0;
+    const fac = porTipo.Facilitador || 0;
+
+    const kpis = [
+      { icono: "🔍", label: "Acompañamientos", valor: total, color: "#0891b2" },
+      { icono: "🧑‍🏫", label: "A facilitadores", valor: fac, color: "#2563eb" },
+      { icono: "🏫", label: "A coordinadores", valor: coord, color: "#7c3aed" },
+      { icono: "⚠️", label: "Requieren seguimiento", valor: requiereSeguimiento, color: "#d97706" },
+      { icono: "✅", label: "Cumplimiento promedio", valor: promedio + "%", color: "#16a34a" }
+    ];
+
+    document.getElementById("resumenDashboard").innerHTML = kpis.map(function(k) {
+      return `<div class="db-kpi-card" style="border-left:5px solid ${k.color}">
+        <span class="db-kpi-icono">${k.icono}</span>
+        <div>
+          <div class="db-kpi-label">${k.label}</div>
+          <div class="db-kpi-valor" style="color:${k.color}">${k.valor}</div>
+        </div>
+      </div>`;
+    }).join("");
+
+    mostrarBloqueGraficosDashboard();
+    configurarTitulosGraficosDashboard("acompanamientos");
+
+    crearGraficoDashboard(
+      "graficoDashboard1",
+      "bar",
+      Object.keys(porTipo),
+      [{ label: "Acompañamientos", data: Object.values(porTipo), backgroundColor: "#0891b2", borderRadius: 6 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard2",
+      "bar",
+      Object.keys(porSeguimiento),
+      [{ label: "Registros", data: Object.values(porSeguimiento), backgroundColor: "#d97706", borderRadius: 6 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard3",
+      "bar",
+      Object.keys(porCumplimiento),
+      [{ label: "Acompañamientos", data: Object.values(porCumplimiento), backgroundColor: "#16a34a", borderRadius: 6 }]
+    );
+
+    crearGraficoDashboard(
+      "graficoDashboard4",
+      "bar",
+      porSede.map(function(item) { return item.etiqueta; }),
+      [{ label: "Acompañamientos", data: porSede.map(function(item) { return item.valor; }), backgroundColor: "#7c3aed", borderRadius: 6 }],
+      { indexAxis: "y", scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+    );
+
+    const matriz = document.getElementById("dashboardMatrizResultados");
+    matriz.classList.remove("oculto");
+
+    if (!acompanamientos || acompanamientos.length === 0) {
+      matriz.innerHTML = "<p>No hay acompañamientos para los filtros seleccionados.</p>";
+      return;
+    }
+
+    let html = "<table>";
+    html += "<thead><tr>";
+    html += "<th>Fecha</th><th>Tipo</th><th>Persona acompañada</th><th>Centro sede</th><th>Grupo</th><th>% cumplimiento</th><th>Seguimiento</th><th>Estado</th>";
+    html += "</tr></thead><tbody>";
+
+    acompanamientos.slice(0, 300).forEach(function(a) {
+      html += "<tr>";
+      html += `<td>${a.fechaAcompanamiento || ""}</td>`;
+      html += `<td>${a.tipoAcompanamiento || ""}</td>`;
+      html += `<td>${a.personaAcompanada || ""}<span class="texto-pequeno">${a.cargoPersonaAcompanada || ""}</span></td>`;
+      html += `<td>${a.centroSede || ""}</td>`;
+      html += `<td>${grupoLegible(a.grupo) || ""}</td>`;
+      html += `<td>${a.porcentajeCumplimiento || 0}%</td>`;
+      html += `<td>${a.requiereSeguimiento || ""}</td>`;
+      html += `<td>${a.estadoSeguimiento || ""}</td>`;
+      html += "</tr>";
+    });
+
+    html += "</tbody></table>";
+    if (acompanamientos.length > 300) html += `<p class="nota">Se muestran los primeros 300 registros de ${acompanamientos.length} encontrados.</p>`;
+    matriz.innerHTML = html;
   }
 
   function cargarDashboardIncidencias() {
