@@ -621,6 +621,9 @@
     .modulo-usuarios        .modulo-acento { background: #be185d; }
     .modulo-usuarios        .icono-modulo  { color: #be185d; background: #fce7f3; }
 
+    .modulo-sedes           .modulo-acento { background: #0f766e; }
+    .modulo-sedes           .icono-modulo  { color: #0f766e; background: #ccfbf1; }
+
     /* ── GESTIÓN DE USUARIOS ────────────────────── */
     .usuarios-admin-toolbar {
       display: flex;
@@ -643,7 +646,9 @@
     .usuarios-admin-toolbar button { margin-top: 0; }
 
     .estado-usuario-activo,
-    .estado-usuario-inactivo {
+    .estado-usuario-inactivo,
+    .estado-sede-activa,
+    .estado-sede-inactiva {
       display: inline-block;
       padding: 3px 9px;
       border-radius: 999px;
@@ -652,16 +657,19 @@
       white-space: nowrap;
     }
 
-    .estado-usuario-activo { background: #d1fae5; color: #065f46; }
-    .estado-usuario-inactivo { background: #fee2e2; color: #991b1b; }
+    .estado-usuario-activo, .estado-sede-activa { background: #d1fae5; color: #065f46; }
+    .estado-usuario-inactivo, .estado-sede-inactiva { background: #fee2e2; color: #991b1b; }
 
     .tabla-usuarios-admin td,
-    .tabla-usuarios-admin th {
+    .tabla-usuarios-admin th,
+    .tabla-sedes-admin td,
+    .tabla-sedes-admin th {
       text-align: left;
       vertical-align: middle;
     }
 
-    .tabla-usuarios-admin .acciones-tabla {
+    .tabla-usuarios-admin .acciones-tabla,
+    .tabla-sedes-admin .acciones-tabla {
       justify-content: flex-start;
       min-width: 210px;
     }
@@ -2571,6 +2579,16 @@
         <span class="modulo-flecha">›</span>
       </div>
 
+      <div id="tileGestionSedes" class="modulo modulo-sedes oculto" onclick="abrirModulo('gestionSedes')">
+        <div class="modulo-acento"></div>
+        <div class="icono-modulo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l8-4 6 3v15"></path><path d="M9 9h1"></path><path d="M9 13h1"></path><path d="M9 17h1"></path><path d="M14 11h1"></path><path d="M14 15h1"></path></svg>
+        </div>
+        <h3>Gestión de sedes</h3>
+        <p>Añadir, editar o inactivar sedes</p>
+        <span class="modulo-flecha">›</span>
+      </div>
+
       <div id="tileAsignacionGrupos" class="modulo modulo-asignacion oculto" onclick="abrirModulo('asignacionGrupos')">
         <div class="modulo-acento"></div>
         <div class="icono-modulo" aria-hidden="true">
@@ -2668,14 +2686,14 @@
           <label for="usuarioAdminGrupo">Grupo</label>
           <select id="usuarioAdminGrupo">
             <option value="">Todos</option>
-            <option value="Exploradores">Exploradores</option>
-            <option value="Creadores">Creadores</option>
-            <option value="Innovadores">Innovadores</option>
-            <option value="Exploradores-2">Exploradores-2</option>
-            <option value="Creadores-2">Creadores-2</option>
-            <option value="Innovadores-2">Innovadores-2</option>
-            <option value="Exploradores-3">Exploradores-3</option>
-            <option value="Creadores-3">Creadores-3</option>
+            <option value="Grupo 1">Grupo 1</option>
+            <option value="Grupo 2">Grupo 2</option>
+            <option value="Grupo 3">Grupo 3</option>
+            <option value="Grupo 4">Grupo 4</option>
+            <option value="Grupo 5">Grupo 5</option>
+            <option value="Grupo 6">Grupo 6</option>
+            <option value="Grupo 7">Grupo 7</option>
+            <option value="Grupo 8">Grupo 8</option>
           </select>
         </div>
         <div>
@@ -2711,6 +2729,90 @@
 
     <div id="resumenUsuariosAdmin" class="nota"></div>
     <div id="tablaUsuariosAdmin" class="tabla-contenedor oculto"></div>
+  </section>
+
+  <section id="moduloGestionSedes" class="tarjeta oculto">
+    <div class="encabezado-modulo">
+      <div>
+        <h2>Gestión de sedes</h2>
+        <p class="nota">Módulo exclusivo para administradores reales. Permite añadir sedes, modificar sus datos, ajustar la cuota e inactivar sedes que no deban aparecer en los selectores.</p>
+      </div>
+      <div class="acciones-modulo">
+        <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
+      </div>
+    </div>
+
+    <div class="bloque-formulario">
+      <h3 id="tituloFormularioSedeAdmin">Crear sede</h3>
+      <input type="hidden" id="sedeAdminCentroOriginal">
+
+      <div class="form-grid-3">
+        <div>
+          <label for="sedeAdminRegional">Regional</label>
+          <input type="text" id="sedeAdminRegional" list="listaRegionalesSedesAdmin" placeholder="Ej.: 01 - BARAHONA">
+          <datalist id="listaRegionalesSedesAdmin"></datalist>
+        </div>
+        <div>
+          <label for="sedeAdminDistrito">Distrito</label>
+          <input type="text" id="sedeAdminDistrito" list="listaDistritosSedesAdmin" placeholder="Ej.: 0101 - PEDERNALES">
+          <datalist id="listaDistritosSedesAdmin"></datalist>
+        </div>
+        <div>
+          <label for="sedeAdminCodigo">Código sede</label>
+          <input type="text" id="sedeAdminCodigo" placeholder="Código del centro sede">
+        </div>
+      </div>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="sedeAdminCentro">Centro sede</label>
+          <input type="text" id="sedeAdminCentro" placeholder="Nombre del centro sede">
+          <div class="ayuda-formulario">Este texto se usa para relacionar usuarios, estudiantes y registros de la sede.</div>
+        </div>
+        <div>
+          <label for="sedeAdminCuota">Cuota de estudiantes</label>
+          <input type="number" id="sedeAdminCuota" min="0" step="1" placeholder="Ej.: 75">
+          <div class="ayuda-formulario">Los grupos disponibles se calculan como cuota ÷ 25, redondeando hacia arriba.</div>
+        </div>
+        <div>
+          <label for="sedeAdminEstado">Estado</label>
+          <select id="sedeAdminEstado">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div>
+          <label for="sedeAdminCoordinador">Coordinador</label>
+          <input type="text" id="sedeAdminCoordinador" placeholder="Nombre del coordinador de sede">
+        </div>
+        <div>
+          <label for="sedeAdminTelefono">Teléfono</label>
+          <input type="text" id="sedeAdminTelefono" placeholder="Teléfono de contacto">
+        </div>
+      </div>
+
+      <div class="acciones-modulo" style="margin-top: 14px;">
+        <button type="button" onclick="guardarSedeAdmin()">Guardar sede</button>
+        <button type="button" class="btn-secundario" onclick="limpiarFormularioSedeAdmin()">Limpiar</button>
+      </div>
+      <div id="mensajeSedeAdmin" class="mensaje"></div>
+    </div>
+
+    <div class="usuarios-admin-toolbar">
+      <div class="campo-busqueda">
+        <label for="filtroSedesAdmin">Buscar sedes</label>
+        <input type="search" id="filtroSedesAdmin" placeholder="Buscar por regional, distrito, código, centro sede o coordinador" oninput="renderizarTablaSedesAdmin()">
+      </div>
+      <div class="acciones-usuarios">
+        <button type="button" onclick="listarSedesAdmin()">Actualizar listado</button>
+      </div>
+    </div>
+
+    <div id="resumenSedesAdmin" class="nota"></div>
+    <div id="tablaSedesAdmin" class="tabla-contenedor oculto"></div>
   </section>
 
   <section id="moduloAsistencia" class="tarjeta oculto">
@@ -4085,7 +4187,7 @@
     "panel", "moduloAsistencia", "moduloDashboard",
     "moduloAcompanamientos", "moduloIncidencias",
     "moduloAsignacionGrupos", "moduloAsignacionEstudiantesGrupos",
-    "moduloGestionUsuarios", "moduloEvaluaciones", "login", "cambioPassword"
+    "moduloGestionUsuarios", "moduloGestionSedes", "moduloInscripcion", "moduloEvaluaciones", "login", "cambioPassword"
   ];
 
   function mostrarModulo(id) {
@@ -4109,6 +4211,8 @@
     moduloAsignacionGrupos: "Asignación de facilitadores",
     moduloAsignacionEstudiantesGrupos: "Asignación de estudiantes",
     moduloGestionUsuarios: "Gestión de usuarios",
+    moduloGestionSedes: "Gestión de sedes",
+    moduloInscripcion: "Inscripción de estudiantes",
     moduloEvaluaciones: "Evaluaciones"
   };
 
@@ -4272,7 +4376,7 @@
     datosAsignacionEstudiantesGrupos = null;
     // Cerrar todos los módulos
     ["moduloAsistencia","moduloDashboard","moduloAcompanamientos","moduloIncidencias",
-     "moduloAsignacionGrupos","moduloAsignacionEstudiantesGrupos","moduloGestionUsuarios"].forEach(function(id) {
+     "moduloAsignacionGrupos","moduloAsignacionEstudiantesGrupos","moduloGestionUsuarios","moduloGestionSedes","moduloInscripcion"].forEach(function(id) {
       const el = document.getElementById(id);
       if (el) el.classList.add("oculto");
     });
@@ -4310,6 +4414,9 @@
     _sedesGlobalesCargando = false;
     _sedesGlobalesCallbacks = [];
     sedesModoAdministrador = [];
+    sedesGestionUsuarios = [];
+    sedesGestionAdminCache = [];
+    sedesInscripcion = [];
   }
 
 
@@ -4786,6 +4893,7 @@
     tarjetaUsuario.classList.remove("oculto");
     actualizarVisibilidadAsignacionGrupos(usuario);
     actualizarVisibilidadGestionUsuarios();
+    actualizarVisibilidadGestionSedes();
     actualizarPanelAdministrador();
     actualizarBarraVistaSimulada();
   }
@@ -4822,6 +4930,13 @@
 
   function actualizarVisibilidadGestionUsuarios() {
     const tile = document.getElementById("tileGestionUsuarios");
+    if (!tile) return;
+    if (esAdministradorReal()) tile.classList.remove("oculto");
+    else tile.classList.add("oculto");
+  }
+
+  function actualizarVisibilidadGestionSedes() {
+    const tile = document.getElementById("tileGestionSedes");
     if (!tile) return;
     if (esAdministradorReal()) tile.classList.remove("oculto");
     else tile.classList.add("oculto");
@@ -5174,6 +5289,11 @@
 
     if (modulo === "gestionUsuarios") {
       abrirModuloGestionUsuarios();
+      return;
+    }
+
+    if (modulo === "gestionSedes") {
+      abrirModuloGestionSedes();
       return;
     }
 
@@ -8865,281 +8985,6 @@
     }, { timeout: 45000 });
   }
 
-  function normalizarNivelAsignacion(valor) {
-    const t = normalizarTexto(valor).toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    if (t.indexOf("explorador") === 0) return "explorador";
-    if (t.indexOf("innovador") === 0) return "innovador";
-    return "creador";
-  }
-
-  function nombreBaseGrupoPorNivel(nivel) {
-    if (nivel === "explorador") return "Exploradores";
-    if (nivel === "innovador") return "Innovadores";
-    return "Creadores";
-  }
-
-  function modaNivelGrupo(lista) {
-    const cnt = { explorador: 0, creador: 0, innovador: 0 };
-    lista.forEach(function(e) { cnt[normalizarNivelAsignacion(e.nivelLengua)]++; });
-    const prioridadEmpate = { creador: 0, explorador: 1, innovador: 2 };
-    return ["explorador", "creador", "innovador"].sort(function(a, b) {
-      if (cnt[b] !== cnt[a]) return cnt[b] - cnt[a];
-      return prioridadEmpate[a] - prioridadEmpate[b];
-    })[0];
-  }
-
-  function nombrarGruposPorModaFrontend(listas) {
-    const bases = listas.map(function(lista) { return nombreBaseGrupoPorNivel(modaNivelGrupo(lista)); });
-    const totales = {};
-    bases.forEach(function(b) { totales[b] = (totales[b] || 0) + 1; });
-    const usados = {};
-    return bases.map(function(b) {
-      if (totales[b] <= 1) return b;
-      usados[b] = (usados[b] || 0) + 1;
-      return b + "-" + usados[b];
-    });
-  }
-
-  function nivelPuntaje(nivel) {
-    const n = normalizarNivelAsignacion(nivel);
-    if (n === "innovador") return 3;
-    if (n === "creador") return 2;
-    if (n === "explorador") return 1;
-    return 0;
-  }
-
-  function puntajeEstudiante(e) {
-    // Lengua Española tiene prioridad: peso 2, Matemática peso 1.
-    return nivelPuntaje(e.nivelLengua) * 2 + nivelPuntaje(e.nivelMat);
-  }
-
-  function calcularAsignacionPorReglas(estudiantes, maxGrupos) {
-    const MAX = 25;
-    const total = estudiantes.length;
-    if (maxGrupos > 0 && total > maxGrupos * MAX) {
-      return { ok: false, mensaje: "Hay " + total + " estudiantes y solo " + maxGrupos + " grupos disponibles. Con máximo 25 por grupo solo caben " + (maxGrupos * MAX) + "." };
-    }
-
-    function ordenar(arr) {
-      return arr.slice().sort(function(a, b) {
-        return puntajeEstudiante(b) - puntajeEstudiante(a) || normalizarTexto(a.nombre).localeCompare(normalizarTexto(b.nombre));
-      });
-    }
-
-    const E = [], C = [], I = [];
-    estudiantes.forEach(function(e) {
-      const n = normalizarNivelAsignacion(e.nivelLengua);
-      if (n === "explorador") E.push(e);
-      else if (n === "innovador") I.push(e);
-      else C.push(e);
-    });
-
-    let exp = ordenar(E), cre = ordenar(C), inn = ordenar(I);
-    function sacar(arr, n) { return arr.splice(0, Math.max(0, n)); }
-
-    const listas = [];
-
-    while (exp.length > 0) {
-      const g = sacar(exp, MAX);
-      if (g.length < MAX) g.push.apply(g, sacar(cre, MAX - g.length));
-      listas.push(g);
-    }
-
-    while (inn.length > 0) {
-      const g = sacar(inn, MAX);
-      if (g.length < MAX) g.push.apply(g, sacar(cre, MAX - g.length));
-      listas.push(g);
-    }
-
-    while (cre.length > 0) {
-      listas.push(sacar(cre, MAX));
-    }
-
-    if (maxGrupos > 0 && listas.length > maxGrupos) {
-      return {
-        ok: false,
-        mensaje: "Con la regla de no mezclar Exploradores con Innovadores se requieren " + listas.length + " grupos, pero la cuota solo permite " + maxGrupos + ". Revise la cuota o la distribución de niveles."
-      };
-    }
-
-    const nombres = nombrarGruposPorModaFrontend(listas);
-    const asignacion = {};
-    nombres.forEach(function(nombre, i) {
-      asignacion[nombre] = listas[i];
-    });
-
-    return { ok: true, grupos: nombres, asignacion: asignacion };
-  }
-
-  function ejecutarAsignacionAutomatica() {
-    if (!datosAsignacionEstudiantesGrupos) return;
-
-    const estudiantes = datosAsignacionEstudiantesGrupos.estudiantes || [];
-    const gruposDisponibles = Number(
-      datosAsignacionEstudiantesGrupos.gruposDisponiblesCantidad ||
-      datosAsignacionEstudiantesGrupos.gruposEsperados ||
-      (datosAsignacionEstudiantesGrupos.grupos || []).length ||
-      Math.ceil(estudiantes.length / 25)
-    );
-
-    if (!gruposDisponibles) {
-      alert("No hay grupos disponibles para la sede.");
-      return;
-    }
-    if (!estudiantes.length) {
-      alert("No hay estudiantes para asignar.");
-      return;
-    }
-
-    const resultado = calcularAsignacionPorReglas(estudiantes, gruposDisponibles);
-    if (!resultado.ok) {
-      alert(resultado.mensaje);
-      return;
-    }
-
-    mapaGrupoSemanticoABackend = {};
-    mapaGrupoBackendASemantico = {};
-    resultado.grupos.forEach(function(g) {
-      mapaGrupoSemanticoABackend[normalizarTexto(g)] = g;
-      mapaGrupoBackendASemantico[normalizarTexto(g)] = g;
-    });
-
-    const centroSedeAuto = (datosAsignacionEstudiantesGrupos && datosAsignacionEstudiantesGrupos.sede && datosAsignacionEstudiantesGrupos.sede.centroSede)
-      || (usuarioActual && usuarioActual.centroSede);
-    if (centroSedeAuto) guardarMapaGruposSede(centroSedeAuto);
-
-    mostrarModalAsignacionAutomatica(resultado.asignacion, resultado.grupos, mapaGrupoSemanticoABackend);
-  }
-
-  function contarNiveles(lista) {
-    const cnt = { innovador: 0, creador: 0, explorador: 0, sinDato: 0 };
-    lista.forEach(function(e) {
-      const n = normalizarNivelAsignacion(e.nivelLengua);
-      if (n === "innovador") cnt.innovador++;
-      else if (n === "creador") cnt.creador++;
-      else if (n === "explorador") cnt.explorador++;
-      else cnt.sinDato++;
-    });
-    return cnt;
-  }
-
-  function tipoGrupoLabel(cnt) {
-    const tieneE = cnt.explorador > 0;
-    const tieneC = cnt.creador > 0 || cnt.sinDato > 0;
-    const tieneI = cnt.innovador > 0;
-    if (tieneE && tieneI) return { texto: "No permitido", color: "#ef4444" };
-    if (tieneE && tieneC) return { texto: "Explorador + Creador", color: "#0891b2" };
-    if (tieneC && tieneI) return { texto: "Creador + Innovador", color: "#7c3aed" };
-    if (tieneE) return { texto: "Solo Explorador", color: "#16a34a" };
-    if (tieneI) return { texto: "Solo Innovador", color: "#6d28d9" };
-    if (tieneC) return { texto: "Solo Creador", color: "#ca8a04" };
-    return { texto: "Sin estudiantes", color: "#94a3b8" };
-  }
-
-  function mostrarModalAsignacionAutomatica(asignacion, grupos, mapaBackend) {
-    const anterior = document.getElementById("modalAsignacionAuto");
-    if (anterior) anterior.remove();
-
-    window._asignacionAutoPendiente = asignacion;
-    window._mapaBackendPendiente = mapaBackend || {};
-
-    let cardsHTML = "";
-    grupos.forEach(function(g) {
-      const lista = asignacion[g] || [];
-      const cnt = contarNiveles(lista);
-      const total = lista.length;
-      const pctInn = total ? Math.round(cnt.innovador / total * 100) : 0;
-      const pctCre = total ? Math.round((cnt.creador + cnt.sinDato) / total * 100) : 0;
-      const pctExp = total ? Math.round(cnt.explorador / total * 100) : 0;
-      const pctSD  = Math.max(0, 100 - pctInn - pctCre - pctExp);
-      const tipo   = tipoGrupoLabel(cnt);
-
-      cardsHTML += `
-        <div class="grupo-preview-card">
-          <h4>${escapeHtml(g)} <span style="font-weight:normal;color:#64748b;font-size:13px;">(${total} estudiantes)</span></h4>
-          <div style="margin-bottom:6px;">
-            <span style="display:inline-block;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:999px;background:${tipo.color}22;color:${tipo.color};border:1px solid ${tipo.color}55;">${tipo.texto}</span>
-          </div>
-          <div>
-            ${cnt.innovador ? `<span class="nivel-badge innovador">Innovador: ${cnt.innovador}</span>` : ""}
-            ${cnt.creador || cnt.sinDato ? `<span class="nivel-badge creador">Creador: ${cnt.creador + cnt.sinDato}</span>` : ""}
-            ${cnt.explorador ? `<span class="nivel-badge explorador">Explorador: ${cnt.explorador}</span>` : ""}
-          </div>
-          <div class="grupo-preview-barra" title="Distribución de niveles">
-            <div class="barra-segmento" style="width:${pctInn}%;background:#7c3aed;"></div>
-            <div class="barra-segmento" style="width:${pctCre}%;background:#ca8a04;"></div>
-            <div class="barra-segmento" style="width:${pctExp}%;background:#16a34a;"></div>
-            <div class="barra-segmento" style="width:${pctSD}%;background:#94a3b8;"></div>
-          </div>
-        </div>
-      `;
-    });
-
-    const totalEst = grupos.reduce(function(s, g) { return s + (asignacion[g] || []).length; }, 0);
-
-    const modal = document.createElement("div");
-    modal.id = "modalAsignacionAuto";
-    modal.className = "modal-overlay";
-    modal.innerHTML = `
-      <div class="modal-asignacion">
-        <h3>Vista previa de la asignación automática</h3>
-        <p class="nota">Se distribuyeron <strong>${totalEst} estudiantes</strong> en <strong>${grupos.length} grupos</strong>. La asignación respeta el máximo de <strong>25 estudiantes por grupo</strong>, evita mezclar <strong>Exploradores</strong> con <strong>Innovadores</strong> y nombra cada grupo según la moda del nivel de Lengua Española.</p>
-
-        <div class="grupos-preview">${cardsHTML}</div>
-
-        <p class="nota" style="font-size:13px;color:#7c3aed;">
-          <strong>Nota:</strong> Al confirmar, los grupos se aplicarán a la tabla. Podrá hacer cambios manuales antes de guardar.
-        </p>
-
-        <div class="acciones-modal">
-          <button type="button" class="btn-secundario" onclick="cerrarModalAsignacionAuto()">Cancelar</button>
-          <button type="button" class="btn-confirmar-asignacion" onclick="aplicarAsignacionAutomatica()">Confirmar y aplicar</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
-
-  function cerrarModalAsignacionAuto() {
-    const modal = document.getElementById("modalAsignacionAuto");
-    if (modal) modal.remove();
-    window._asignacionAutoPendiente = null;
-    window._mapaBackendPendiente = null;
-  }
-
-  function aplicarAsignacionAutomatica() {
-    const asignacion = window._asignacionAutoPendiente;
-    if (!asignacion) return;
-
-    if (window._mapaBackendPendiente) {
-      Object.assign(mapaGrupoSemanticoABackend, window._mapaBackendPendiente);
-    }
-
-    const mapaGrupo = {};
-    Object.keys(asignacion).forEach(function(grupo) {
-      (asignacion[grupo] || []).forEach(function(e) {
-        mapaGrupo[normalizarTexto(e.idEstudiante)] = grupo;
-      });
-    });
-
-    document.querySelectorAll(".select-asignacion-estudiante").forEach(function(select) {
-      const id = normalizarTexto(select.dataset.id);
-      const grupo = mapaGrupo[id];
-      if (!grupo) return;
-      if (!Array.from(select.options).some(function(op) { return op.value === grupo; })) {
-        const opt = document.createElement("option");
-        opt.value = grupo;
-        opt.textContent = grupo;
-        select.appendChild(opt);
-      }
-      select.value = grupo;
-    });
-
-    actualizarResumenVisualAsignacionEstudiantes();
-    cerrarModalAsignacionAuto();
-  }
-
   function actualizarVisibilidadBtnAsignacionAuto() {
     const btn = document.getElementById("btnAsignacionAutomatica");
     if (!btn) return;
@@ -9168,6 +9013,232 @@
       cargarRegionalesUsuarioAdmin();
       listarUsuariosAdmin();
     });
+  }
+
+
+
+  // ═══ GESTIÓN DE SEDES (ADMINISTRADOR) ═════════════════════════════════════
+  let sedesGestionAdminCache = [];
+
+  function abrirModuloGestionSedes() {
+    if (!esAdministradorReal()) {
+      alert("Este módulo solo está disponible para el Administrador.");
+      return;
+    }
+    mostrarModulo("moduloGestionSedes");
+    limpiarFormularioSedeAdmin();
+    listarSedesAdmin();
+  }
+
+  function listarSedesAdmin() {
+    if (!esAdministradorReal()) return;
+    const mensaje = document.getElementById("mensajeSedeAdmin");
+    const resumen = document.getElementById("resumenSedesAdmin");
+    if (mensaje) { mensaje.textContent = "Cargando sedes..."; mensaje.className = "mensaje"; }
+    if (resumen) resumen.textContent = "";
+
+    llamarBackend(
+      { accion: "listarSedesAdmin", cedula: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula },
+      function(resp) {
+        if (resp && resp.ok) {
+          sedesGestionAdminCache = resp.sedes || [];
+          llenarDatalistSedesAdmin();
+          renderizarTablaSedesAdmin();
+          if (mensaje) { mensaje.textContent = ""; mensaje.className = "mensaje"; }
+        } else {
+          sedesGestionAdminCache = [];
+          renderizarTablaSedesAdmin();
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudieron cargar las sedes."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 20000 }
+    );
+  }
+
+  function llenarDatalistSedesAdmin() {
+    const listaReg = document.getElementById("listaRegionalesSedesAdmin");
+    const listaDis = document.getElementById("listaDistritosSedesAdmin");
+    if (listaReg) {
+      listaReg.innerHTML = "";
+      obtenerValoresUnicos(sedesGestionAdminCache, "regional").forEach(function(regional) {
+        const opt = document.createElement("option");
+        opt.value = regional;
+        listaReg.appendChild(opt);
+      });
+    }
+    if (listaDis) {
+      listaDis.innerHTML = "";
+      obtenerValoresUnicos(sedesGestionAdminCache, "distrito").forEach(function(distrito) {
+        const opt = document.createElement("option");
+        opt.value = distrito;
+        listaDis.appendChild(opt);
+      });
+    }
+  }
+
+  function sedesAdminFiltradas() {
+    const filtro = normalizarRol(document.getElementById("filtroSedesAdmin").value || "");
+    if (!filtro) return sedesGestionAdminCache.slice();
+    return sedesGestionAdminCache.filter(function(s) {
+      const texto = [s.regional, s.distrito, s.codigoSede, s.centroSede, s.coordinador, s.telefono, s.estado]
+        .map(function(v) { return normalizarRol(v); })
+        .join(" ");
+      return texto.indexOf(filtro) >= 0;
+    });
+  }
+
+  function renderizarTablaSedesAdmin() {
+    const cont = document.getElementById("tablaSedesAdmin");
+    const resumen = document.getElementById("resumenSedesAdmin");
+    if (!cont) return;
+
+    const sedes = sedesAdminFiltradas();
+    if (resumen) resumen.textContent = sedes.length + " sede(s) mostrada(s) de " + sedesGestionAdminCache.length + " registrada(s).";
+
+    if (!sedes.length) {
+      cont.classList.add("oculto");
+      cont.innerHTML = "";
+      return;
+    }
+
+    let html = '<table class="tabla-sedes-admin"><thead><tr>' +
+      '<th>Regional</th><th>Distrito</th><th>Código</th><th>Centro sede</th><th>Cuota</th><th>Grupos</th><th>Coordinador</th><th>Teléfono</th><th>Estado</th><th>Acciones</th>' +
+      '</tr></thead><tbody>';
+
+    sedes.forEach(function(s) {
+      const estadoNorm = normalizarRol(s.estado || "Activo") === "inactivo" ? "Inactivo" : "Activo";
+      const claseEstado = estadoNorm === "Activo" ? "estado-sede-activa" : "estado-sede-inactiva";
+      html += '<tr>' +
+        '<td>' + escapeHtml(s.regional) + '</td>' +
+        '<td>' + escapeHtml(s.distrito) + '</td>' +
+        '<td>' + escapeHtml(s.codigoSede) + '</td>' +
+        '<td>' + escapeHtml(s.centroSede) + '</td>' +
+        '<td>' + escapeHtml(s.cuota) + '</td>' +
+        '<td>' + escapeHtml(s.gruposEsperados) + '</td>' +
+        '<td>' + escapeHtml(s.coordinador) + '</td>' +
+        '<td>' + escapeHtml(s.telefono) + '</td>' +
+        '<td><span class="' + claseEstado + '">' + estadoNorm + '</span></td>' +
+        '<td><div class="acciones-tabla">' +
+          '<button type="button" onclick="editarSedeAdmin(\'' + escapeJs(s.centroSede) + '\')">Editar</button>' +
+          '<button type="button" class="btn-peligro" onclick="cambiarEstadoSedeAdmin(\'' + escapeJs(s.centroSede) + '\', \'' + (estadoNorm === "Activo" ? "Inactivo" : "Activo") + '\')">' + (estadoNorm === "Activo" ? "Inactivar" : "Activar") + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table>';
+    cont.innerHTML = html;
+    cont.classList.remove("oculto");
+  }
+
+  function limpiarFormularioSedeAdmin() {
+    ["sedeAdminCentroOriginal", "sedeAdminRegional", "sedeAdminDistrito", "sedeAdminCodigo", "sedeAdminCentro", "sedeAdminCuota", "sedeAdminCoordinador", "sedeAdminTelefono"].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.value = "";
+    });
+    const estado = document.getElementById("sedeAdminEstado");
+    if (estado) estado.value = "Activo";
+    const titulo = document.getElementById("tituloFormularioSedeAdmin");
+    if (titulo) titulo.textContent = "Crear sede";
+    const mensaje = document.getElementById("mensajeSedeAdmin");
+    if (mensaje) { mensaje.textContent = ""; mensaje.className = "mensaje"; }
+  }
+
+  function editarSedeAdmin(centroSede) {
+    const s = sedesGestionAdminCache.find(function(x) { return normalizarTexto(x.centroSede) === normalizarTexto(centroSede); });
+    if (!s) return;
+    document.getElementById("sedeAdminCentroOriginal").value = s.centroSede || "";
+    document.getElementById("sedeAdminRegional").value = s.regional || "";
+    document.getElementById("sedeAdminDistrito").value = s.distrito || "";
+    document.getElementById("sedeAdminCodigo").value = s.codigoSede || "";
+    document.getElementById("sedeAdminCentro").value = s.centroSede || "";
+    document.getElementById("sedeAdminCuota").value = String(s.cuota ?? "");
+    document.getElementById("sedeAdminCoordinador").value = s.coordinador || "";
+    document.getElementById("sedeAdminTelefono").value = s.telefono || "";
+    document.getElementById("sedeAdminEstado").value = normalizarRol(s.estado || "Activo") === "inactivo" ? "Inactivo" : "Activo";
+
+    const titulo = document.getElementById("tituloFormularioSedeAdmin");
+    if (titulo) titulo.textContent = "Editar sede";
+    const mensaje = document.getElementById("mensajeSedeAdmin");
+    if (mensaje) { mensaje.textContent = "Editando sede: " + (s.centroSede || ""); mensaje.className = "mensaje"; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function construirPayloadSedeAdmin() {
+    return {
+      cedulaAdmin: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
+      centroSedeOriginal: document.getElementById("sedeAdminCentroOriginal").value.trim(),
+      regional: document.getElementById("sedeAdminRegional").value.trim(),
+      distrito: document.getElementById("sedeAdminDistrito").value.trim(),
+      codigoSede: document.getElementById("sedeAdminCodigo").value.trim(),
+      centroSede: document.getElementById("sedeAdminCentro").value.trim(),
+      cuota: document.getElementById("sedeAdminCuota").value.trim(),
+      coordinador: document.getElementById("sedeAdminCoordinador").value.trim(),
+      telefono: document.getElementById("sedeAdminTelefono").value.trim(),
+      estado: document.getElementById("sedeAdminEstado").value
+    };
+  }
+
+  function validarPayloadSedeAdmin(p) {
+    if (!p.regional) return "Debe indicar la regional.";
+    if (!p.distrito) return "Debe indicar el distrito.";
+    if (!p.centroSede) return "Debe indicar el centro sede.";
+    const cuota = Number(p.cuota || 0);
+    if (!Number.isFinite(cuota) || cuota < 0) return "La cuota debe ser un número mayor o igual que cero.";
+    if (p.estado !== "Activo" && p.estado !== "Inactivo") return "Estado no válido.";
+    return "";
+  }
+
+  function guardarSedeAdmin() {
+    if (!esAdministradorReal()) return;
+    const mensaje = document.getElementById("mensajeSedeAdmin");
+    const payload = construirPayloadSedeAdmin();
+    const error = validarPayloadSedeAdmin(payload);
+    if (error) {
+      if (mensaje) { mensaje.textContent = error; mensaje.className = "mensaje error"; }
+      return;
+    }
+
+    if (mensaje) { mensaje.textContent = "Guardando sede..."; mensaje.className = "mensaje"; }
+    llamarBackend(
+      { accion: "guardarSede", payload: JSON.stringify(payload) },
+      function(resp) {
+        if (resp && resp.ok) {
+          if (mensaje) { mensaje.textContent = resp.mensaje || "Sede guardada correctamente."; mensaje.className = "mensaje ok"; }
+          invalidarCacheSedes();
+          limpiarFormularioSedeAdmin();
+          listarSedesAdmin();
+        } else {
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudo guardar la sede."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 22000 }
+    );
+  }
+
+  function cambiarEstadoSedeAdmin(centroSede, nuevoEstado) {
+    if (!esAdministradorReal()) return;
+    if (!confirm("¿Desea cambiar el estado de esta sede a " + nuevoEstado + "?")) return;
+    const mensaje = document.getElementById("mensajeSedeAdmin");
+    if (mensaje) { mensaje.textContent = "Actualizando sede..."; mensaje.className = "mensaje"; }
+    llamarBackend(
+      {
+        accion: "cambiarEstadoSede",
+        payload: JSON.stringify({
+          cedulaAdmin: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
+          centroSede: centroSede,
+          estado: nuevoEstado
+        })
+      },
+      function(resp) {
+        if (resp && resp.ok) {
+          if (mensaje) { mensaje.textContent = resp.mensaje || "Estado actualizado."; mensaje.className = "mensaje ok"; }
+          invalidarCacheSedes();
+          listarSedesAdmin();
+        } else {
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudo actualizar el estado."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 18000 }
+    );
   }
 
   /* ============================ MÓDULO INSCRIPCIÓN ======================== */
@@ -9755,6 +9826,7 @@
     personaSeleccionadaAcompanamiento = null;
     sedesIncidencias = [];
     sedeSeleccionadaIncidencia = null;
+    sedesGestionAdminCache = [];
     invalidarCacheSedes();
 
     localStorage.removeItem("usuarioCampamento");
