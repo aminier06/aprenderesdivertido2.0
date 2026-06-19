@@ -2844,7 +2844,10 @@
 </footer>
 
 <script>
-  const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbyJDZsp8hnG3GSt2Z0S5SRMb4REgWWgM0-yoP2VN37UHosWmP_KBqjdA8ihm5U9k5_UyQ/exec";
+  // ▼ MIGRADO A SUPABASE. Reemplaza TU_PROYECTO por el ref de tu proyecto.
+  //   La Edge Function "api" acepta los mismos parámetros y soporta JSONP (?callback=),
+  //   así que el resto del código sigue funcionando sin cambios.
+  const URL_SCRIPT = "https://tjtwncyzuphlixbmtsld.supabase.co/functions/v1/api";
 
   // ═══ HELPER: LLAMADA AL BACKEND (con timeout) ══════════════════════════════
   // Uso: llamarBackend({ accion: "login", ... }, callback, { timeout: 14000 });
