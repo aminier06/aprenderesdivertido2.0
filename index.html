@@ -8492,6 +8492,13 @@
     const sede = datosAsignacionEstudiantesGrupos.sede || {};
     const grupos = datosAsignacionEstudiantesGrupos.grupos || [];
     const estudiantes = datosAsignacionEstudiantesGrupos.estudiantes || [];
+    const cuotaAsignacion = Number(datosAsignacionEstudiantesGrupos.cuota || 0);
+    const gruposDisponiblesCantidad = Number(
+      datosAsignacionEstudiantesGrupos.gruposDisponiblesCantidad ||
+      datosAsignacionEstudiantesGrupos.gruposEsperados ||
+      grupos.length ||
+      0
+    );
 
     const total = estudiantes.length;
     const sinAsignar = estudiantes.filter(function(e) { return !normalizarTexto(e.grupo); }).length;
@@ -8501,7 +8508,8 @@
       <div class="dato-asignacion"><span>Regional</span><strong>${escapeHtml(sede.regional || usuarioActual.regional || "")}</strong></div>
       <div class="dato-asignacion"><span>Distrito</span><strong>${escapeHtml(sede.distrito || usuarioActual.distrito || "")}</strong></div>
       <div class="dato-asignacion"><span>Centro sede</span><strong>${escapeHtml(sede.centroSede || usuarioActual.centroSede || "")}</strong></div>
-      <div class="dato-asignacion"><span>Grupos disponibles</span><strong>${escapeHtml(construirGruposOperativos(grupos.length).join(", ")) || "No definidos"}</strong></div>
+      <div class="dato-asignacion"><span>Cuota estudiantes</span><strong>${cuotaAsignacion > 0 ? cuotaAsignacion : "No definida"}</strong></div>
+      <div class="dato-asignacion"><span>Grupos disponibles</span><strong>${gruposDisponiblesCantidad}</strong></div>
       <div class="dato-asignacion"><span>Estudiantes</span><strong>${total}</strong></div>
       <div class="dato-asignacion"><span>Asignados</span><strong id="totalEstudiantesAsignados">${asignados}</strong></div>
       <div class="dato-asignacion"><span>Sin asignar</span><strong id="totalEstudiantesSinAsignar">${sinAsignar}</strong></div>
@@ -8540,7 +8548,17 @@
     document.getElementById("btnGuardarAsignacionEstudiantesGrupos").classList.add("oculto");
     document.getElementById("alertaAsignacionEstudiantesGrupos").classList.add("oculto");
 
+    const cuotaConsulta = Number(datosAsignacionEstudiantesGrupos.cuota || 0);
+    const gruposConsulta = Number(
+      datosAsignacionEstudiantesGrupos.gruposDisponiblesCantidad ||
+      datosAsignacionEstudiantesGrupos.gruposEsperados ||
+      (datosAsignacionEstudiantesGrupos.grupos || []).length ||
+      0
+    );
+
     document.getElementById("resumenAsignacionEstudiantesGrupos").innerHTML = `
+      <div class="dato-asignacion"><span>Cuota estudiantes</span><strong>${cuotaConsulta > 0 ? cuotaConsulta : "No definida"}</strong></div>
+      <div class="dato-asignacion"><span>Grupos disponibles</span><strong>${gruposConsulta}</strong></div>
       <div class="dato-asignacion"><span>Total de estudiantes</span><strong>${total}</strong></div>
       <div class="dato-asignacion"><span>Asignados</span><strong>${asignados}</strong></div>
       <div class="dato-asignacion"><span>Pendientes</span><strong>${sinAsignar}</strong></div>
