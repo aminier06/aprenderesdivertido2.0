@@ -618,6 +618,61 @@
     .modulo-asignacion      .modulo-acento { background: #7c3aed; }
     .modulo-asignacion      .icono-modulo  { color: #7c3aed; background: #f3eeff; }
 
+    .modulo-usuarios        .modulo-acento { background: #be185d; }
+    .modulo-usuarios        .icono-modulo  { color: #be185d; background: #fce7f3; }
+
+    /* ── GESTIÓN DE USUARIOS ────────────────────── */
+    .usuarios-admin-toolbar {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 16px 0 10px;
+    }
+
+    .usuarios-admin-toolbar .campo-busqueda {
+      flex: 1 1 260px;
+    }
+
+    .usuarios-admin-toolbar .acciones-usuarios {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .usuarios-admin-toolbar button { margin-top: 0; }
+
+    .estado-usuario-activo,
+    .estado-usuario-inactivo {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .estado-usuario-activo { background: #d1fae5; color: #065f46; }
+    .estado-usuario-inactivo { background: #fee2e2; color: #991b1b; }
+
+    .tabla-usuarios-admin td,
+    .tabla-usuarios-admin th {
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .tabla-usuarios-admin .acciones-tabla {
+      justify-content: flex-start;
+      min-width: 210px;
+    }
+
+    .ayuda-formulario {
+      font-size: 12.5px;
+      color: var(--texto-3);
+      line-height: 1.45;
+      margin-top: 6px;
+    }
+
     /* ── PANEL ADMINISTRADOR ─────────────────────── */
     #panelAdministrador {
       background: var(--fondo-2);
@@ -2228,6 +2283,16 @@
         <span class="modulo-flecha">›</span>
       </div>
 
+      <div id="tileGestionUsuarios" class="modulo modulo-usuarios oculto" onclick="abrirModulo('gestionUsuarios')">
+        <div class="modulo-acento"></div>
+        <div class="icono-modulo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6"></path><path d="M22 11h-6"></path></svg>
+        </div>
+        <h3>Gestión de usuarios</h3>
+        <p>Crear, editar y activar accesos</p>
+        <span class="modulo-flecha">›</span>
+      </div>
+
       <div id="tileAsignacionGrupos" class="modulo modulo-asignacion oculto" onclick="abrirModulo('asignacionGrupos')">
         <div class="modulo-acento"></div>
         <div class="icono-modulo" aria-hidden="true">
@@ -2248,6 +2313,116 @@
         <span class="modulo-flecha">›</span>
       </div>
     </div>
+  </section>
+
+  <section id="moduloGestionUsuarios" class="tarjeta oculto">
+    <div class="encabezado-modulo">
+      <div>
+        <h2>Gestión de usuarios</h2>
+        <p class="nota">Módulo exclusivo para administradores reales. Permite crear usuarios, editar su alcance y activar o inactivar accesos.</p>
+      </div>
+      <div class="acciones-modulo">
+        <button class="btn-secundario" onclick="volverAlPanel()">Volver al panel</button>
+      </div>
+    </div>
+
+    <div class="bloque-formulario">
+      <h3 id="tituloFormularioUsuarioAdmin">Crear usuario</h3>
+      <input type="hidden" id="usuarioAdminCedulaOriginal">
+
+      <div class="form-grid-3">
+        <div>
+          <label for="usuarioAdminCedula">Cédula</label>
+          <input type="text" id="usuarioAdminCedula" placeholder="Sin guiones o como aparece en la BD">
+        </div>
+        <div>
+          <label for="usuarioAdminNombre">Nombre completo</label>
+          <input type="text" id="usuarioAdminNombre" placeholder="Nombre y apellido">
+        </div>
+        <div>
+          <label for="usuarioAdminRol">Rol</label>
+          <select id="usuarioAdminRol" onchange="actualizarAlcanceFormularioUsuarioAdmin()">
+            <option value="">Seleccione un rol</option>
+            <option value="Administrador">Administrador</option>
+            <option value="Director nacional">Director nacional</option>
+            <option value="Técnico nacional">Técnico nacional</option>
+            <option value="Técnico regional">Técnico regional</option>
+            <option value="Técnico distrital">Técnico distrital</option>
+            <option value="Coordinador sede">Coordinador sede</option>
+            <option value="Facilitador">Facilitador</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="usuarioAdminRegional">Regional</label>
+          <select id="usuarioAdminRegional" onchange="cargarDistritosUsuarioAdmin()">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div>
+          <label for="usuarioAdminDistrito">Distrito</label>
+          <select id="usuarioAdminDistrito" onchange="cargarSedesUsuarioAdmin()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div>
+          <label for="usuarioAdminCentroSede">Centro sede</label>
+          <select id="usuarioAdminCentroSede">
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid-3">
+        <div>
+          <label for="usuarioAdminGrupo">Grupo</label>
+          <select id="usuarioAdminGrupo">
+            <option value="">Todos</option>
+            <option value="Grupo 1">Grupo 1</option>
+            <option value="Grupo 2">Grupo 2</option>
+            <option value="Grupo 3">Grupo 3</option>
+            <option value="Grupo 4">Grupo 4</option>
+            <option value="Grupo 5">Grupo 5</option>
+            <option value="Grupo 6">Grupo 6</option>
+            <option value="Grupo 7">Grupo 7</option>
+            <option value="Grupo 8">Grupo 8</option>
+          </select>
+        </div>
+        <div>
+          <label for="usuarioAdminEstado">Estado</label>
+          <select id="usuarioAdminEstado">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div>
+          <label for="usuarioAdminPassword">Contraseña inicial / nueva</label>
+          <input type="text" id="usuarioAdminPassword" placeholder="Déjalo vacío para no cambiarla">
+          <div class="ayuda-formulario">Al crear un usuario, si se deja vacío, se usará la cédula como contraseña inicial.</div>
+        </div>
+      </div>
+
+      <div class="acciones-modulo" style="margin-top: 14px;">
+        <button type="button" onclick="guardarUsuarioAdmin()">Guardar usuario</button>
+        <button type="button" class="btn-secundario" onclick="limpiarFormularioUsuarioAdmin()">Limpiar</button>
+      </div>
+      <div id="mensajeUsuarioAdmin" class="mensaje"></div>
+    </div>
+
+    <div class="usuarios-admin-toolbar">
+      <div class="campo-busqueda">
+        <label for="filtroUsuariosAdmin">Buscar usuarios</label>
+        <input type="search" id="filtroUsuariosAdmin" placeholder="Buscar por cédula, nombre, rol, regional, distrito o sede" oninput="renderizarTablaUsuariosAdmin()">
+      </div>
+      <div class="acciones-usuarios">
+        <button type="button" onclick="listarUsuariosAdmin()">Actualizar listado</button>
+      </div>
+    </div>
+
+    <div id="resumenUsuariosAdmin" class="nota"></div>
+    <div id="tablaUsuariosAdmin" class="tabla-contenedor oculto"></div>
   </section>
 
   <section id="moduloAsistencia" class="tarjeta oculto">
@@ -3035,7 +3210,7 @@
     "panel", "moduloAsistencia", "moduloDashboard",
     "moduloAcompanamientos", "moduloIncidencias",
     "moduloAsignacionGrupos", "moduloAsignacionEstudiantesGrupos",
-    "login", "cambioPassword"
+    "moduloGestionUsuarios", "login", "cambioPassword"
   ];
 
   function mostrarModulo(id) {
@@ -3057,7 +3232,8 @@
     moduloAcompanamientos: "Acompañamientos",
     moduloIncidencias: "Incidencias",
     moduloAsignacionGrupos: "Asignación de facilitadores",
-    moduloAsignacionEstudiantesGrupos: "Asignación de estudiantes"
+    moduloAsignacionEstudiantesGrupos: "Asignación de estudiantes",
+    moduloGestionUsuarios: "Gestión de usuarios"
   };
 
   function actualizarBreadcrumb(moduloId) {
@@ -3220,7 +3396,7 @@
     datosAsignacionEstudiantesGrupos = null;
     // Cerrar todos los módulos
     ["moduloAsistencia","moduloDashboard","moduloAcompanamientos","moduloIncidencias",
-     "moduloAsignacionGrupos","moduloAsignacionEstudiantesGrupos"].forEach(function(id) {
+     "moduloAsignacionGrupos","moduloAsignacionEstudiantesGrupos","moduloGestionUsuarios"].forEach(function(id) {
       const el = document.getElementById(id);
       if (el) el.classList.add("oculto");
     });
@@ -3733,6 +3909,7 @@
 
     tarjetaUsuario.classList.remove("oculto");
     actualizarVisibilidadAsignacionGrupos(usuario);
+    actualizarVisibilidadGestionUsuarios();
     actualizarPanelAdministrador();
     actualizarBarraVistaSimulada();
   }
@@ -3751,6 +3928,13 @@
       if (puedeVer) tileEstudiantes.classList.remove("oculto");
       else tileEstudiantes.classList.add("oculto");
     }
+  }
+
+  function actualizarVisibilidadGestionUsuarios() {
+    const tile = document.getElementById("tileGestionUsuarios");
+    if (!tile) return;
+    if (esAdministradorReal()) tile.classList.remove("oculto");
+    else tile.classList.add("oculto");
   }
 
   function puedeConsultarAsignaciones(usuario) {
@@ -4095,6 +4279,11 @@
 
     if (modulo === "asignacionEstudiantesGrupos") {
       abrirModuloAsignacionEstudiantesGrupos();
+      return;
+    }
+
+    if (modulo === "gestionUsuarios") {
+      abrirModuloGestionUsuarios();
       return;
     }
 
@@ -8296,6 +8485,389 @@
     }
   }
 
+
+
+  // ═══ GESTIÓN DE USUARIOS (ADMINISTRADOR) ══════════════════════════════════
+  let usuariosAdminCache = [];
+  let sedesGestionUsuarios = [];
+
+  function abrirModuloGestionUsuarios() {
+    if (!esAdministradorReal()) {
+      alert("Este módulo solo está disponible para el Administrador.");
+      return;
+    }
+
+    mostrarModulo("moduloGestionUsuarios");
+    limpiarFormularioUsuarioAdmin();
+    cargarSedesGestionUsuarios(function() {
+      cargarRegionalesUsuarioAdmin();
+      listarUsuariosAdmin();
+    });
+  }
+
+  function cargarSedesGestionUsuarios(callback) {
+    if (sedesGestionUsuarios && sedesGestionUsuarios.length) {
+      if (callback) callback();
+      return;
+    }
+
+    if (sedesModoAdministrador && sedesModoAdministrador.length) {
+      sedesGestionUsuarios = sedesModoAdministrador.slice();
+      if (callback) callback();
+      return;
+    }
+
+    llamarBackend(
+      { accion: "sedesPermitidas", cedula: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula },
+      function(resp) {
+        if (resp && resp.ok) {
+          sedesGestionUsuarios = resp.sedes || [];
+          sedesModoAdministrador = sedesGestionUsuarios.slice();
+        } else {
+          sedesGestionUsuarios = [];
+        }
+        if (callback) callback();
+      },
+      { timeout: 14000 }
+    );
+  }
+
+  function cargarRegionalesUsuarioAdmin() {
+    const select = document.getElementById("usuarioAdminRegional");
+    if (!select) return;
+    const valorAnterior = select.value;
+    select.innerHTML = '<option value="">Todas</option>';
+
+    obtenerValoresUnicos(sedesGestionUsuarios, "regional").forEach(function(regional) {
+      const opt = document.createElement("option");
+      opt.value = regional;
+      opt.textContent = regional;
+      select.appendChild(opt);
+    });
+
+    if (valorAnterior) select.value = valorAnterior;
+    cargarDistritosUsuarioAdmin();
+  }
+
+  function cargarDistritosUsuarioAdmin() {
+    const regional = document.getElementById("usuarioAdminRegional").value;
+    const selectDistrito = document.getElementById("usuarioAdminDistrito");
+    const selectSede = document.getElementById("usuarioAdminCentroSede");
+    if (!selectDistrito || !selectSede) return;
+
+    const distritoAnterior = selectDistrito.value;
+    selectDistrito.innerHTML = '<option value="">Todos</option>';
+    selectSede.innerHTML = '<option value="">Todas</option>';
+
+    const sedesFiltradas = regional
+      ? sedesGestionUsuarios.filter(function(s) { return normalizarTexto(s.regional) === normalizarTexto(regional); })
+      : sedesGestionUsuarios;
+
+    obtenerValoresUnicos(sedesFiltradas, "distrito").forEach(function(distrito) {
+      const opt = document.createElement("option");
+      opt.value = distrito;
+      opt.textContent = distrito;
+      selectDistrito.appendChild(opt);
+    });
+
+    if (distritoAnterior) selectDistrito.value = distritoAnterior;
+    cargarSedesUsuarioAdmin();
+  }
+
+  function cargarSedesUsuarioAdmin() {
+    const regional = document.getElementById("usuarioAdminRegional").value;
+    const distrito = document.getElementById("usuarioAdminDistrito").value;
+    const selectSede = document.getElementById("usuarioAdminCentroSede");
+    if (!selectSede) return;
+
+    const sedeAnterior = selectSede.value;
+    selectSede.innerHTML = '<option value="">Todas</option>';
+
+    sedesGestionUsuarios.filter(function(s) {
+      if (regional && normalizarTexto(s.regional) !== normalizarTexto(regional)) return false;
+      if (distrito && normalizarTexto(s.distrito) !== normalizarTexto(distrito)) return false;
+      return true;
+    }).forEach(function(sede) {
+      const opt = document.createElement("option");
+      opt.value = sede.centroSede;
+      opt.textContent = sede.codigoSede ? (sede.codigoSede + " - " + sede.centroSede) : sede.centroSede;
+      selectSede.appendChild(opt);
+    });
+
+    if (sedeAnterior) selectSede.value = sedeAnterior;
+    actualizarAlcanceFormularioUsuarioAdmin();
+  }
+
+  function actualizarAlcanceFormularioUsuarioAdmin() {
+    const rol = document.getElementById("usuarioAdminRol").value;
+    const regional = document.getElementById("usuarioAdminRegional");
+    const distrito = document.getElementById("usuarioAdminDistrito");
+    const sede = document.getElementById("usuarioAdminCentroSede");
+    const grupo = document.getElementById("usuarioAdminGrupo");
+
+    const requiereRegional = rol === "Técnico regional" || rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereDistrito = rol === "Técnico distrital" || rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereSede = rol === "Coordinador sede" || rol === "Facilitador";
+    const requiereGrupo = rol === "Facilitador";
+
+    if (regional) regional.disabled = !requiereRegional;
+    if (distrito) distrito.disabled = !requiereDistrito;
+    if (sede) sede.disabled = !requiereSede;
+    if (grupo) grupo.disabled = !requiereGrupo;
+
+    if (!requiereRegional && regional) regional.value = "";
+    if (!requiereDistrito && distrito) distrito.value = "";
+    if (!requiereSede && sede) sede.value = "";
+    if (!requiereGrupo && grupo) grupo.value = "";
+  }
+
+  function listarUsuariosAdmin() {
+    if (!esAdministradorReal()) return;
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    const resumen = document.getElementById("resumenUsuariosAdmin");
+    if (mensaje) { mensaje.textContent = "Cargando usuarios..."; mensaje.className = "mensaje"; }
+    if (resumen) resumen.textContent = "";
+
+    llamarBackend(
+      { accion: "listarUsuarios", cedula: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula },
+      function(resp) {
+        if (resp && resp.ok) {
+          usuariosAdminCache = resp.usuarios || [];
+          renderizarTablaUsuariosAdmin();
+          if (mensaje) { mensaje.textContent = "Listado actualizado."; mensaje.className = "mensaje ok"; }
+        } else {
+          usuariosAdminCache = [];
+          renderizarTablaUsuariosAdmin();
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudieron cargar los usuarios."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 20000 }
+    );
+  }
+
+  function usuariosAdminFiltrados() {
+    const filtro = normalizarRol(document.getElementById("filtroUsuariosAdmin").value || "");
+    if (!filtro) return usuariosAdminCache.slice();
+    return usuariosAdminCache.filter(function(u) {
+      const texto = [u.cedula, u.nombre, u.rol, u.regional, u.distrito, u.centroSede, u.grupo, u.estado]
+        .map(function(v) { return normalizarRol(v); })
+        .join(" ");
+      return texto.indexOf(filtro) >= 0;
+    });
+  }
+
+  function renderizarTablaUsuariosAdmin() {
+    const cont = document.getElementById("tablaUsuariosAdmin");
+    const resumen = document.getElementById("resumenUsuariosAdmin");
+    if (!cont) return;
+
+    const usuarios = usuariosAdminFiltrados();
+    if (resumen) {
+      resumen.textContent = usuarios.length + " usuario(s) mostrado(s) de " + usuariosAdminCache.length + " registrado(s).";
+    }
+
+    if (!usuarios.length) {
+      cont.classList.add("oculto");
+      cont.innerHTML = "";
+      return;
+    }
+
+    let html = '<table class="tabla-usuarios-admin"><thead><tr>' +
+      '<th>Cédula</th><th>Nombre</th><th>Rol</th><th>Regional</th><th>Distrito</th><th>Centro sede</th><th>Grupo</th><th>Estado</th><th>Acciones</th>' +
+      '</tr></thead><tbody>';
+
+    usuarios.forEach(function(u) {
+      const estadoNorm = normalizarRol(u.estado) === "activo" ? "Activo" : "Inactivo";
+      const claseEstado = estadoNorm === "Activo" ? "estado-usuario-activo" : "estado-usuario-inactivo";
+      html += '<tr>' +
+        '<td>' + escapeHtml(u.cedula) + '</td>' +
+        '<td>' + escapeHtml(u.nombre) + '</td>' +
+        '<td>' + escapeHtml(u.rol) + '</td>' +
+        '<td>' + escapeHtml(u.regional) + '</td>' +
+        '<td>' + escapeHtml(u.distrito) + '</td>' +
+        '<td>' + escapeHtml(u.centroSede) + '</td>' +
+        '<td>' + escapeHtml(u.grupo) + '</td>' +
+        '<td><span class="' + claseEstado + '">' + estadoNorm + '</span></td>' +
+        '<td><div class="acciones-tabla">' +
+          '<button type="button" onclick="editarUsuarioAdmin(\'' + escapeJs(u.cedula) + '\')">Editar</button>' +
+          '<button type="button" class="btn-secundario" onclick="prepararResetPasswordUsuarioAdmin(\'' + escapeJs(u.cedula) + '\')">Reset</button>' +
+          '<button type="button" class="btn-peligro" onclick="cambiarEstadoUsuarioAdmin(\'' + escapeJs(u.cedula) + '\', \'' + (estadoNorm === "Activo" ? "Inactivo" : "Activo") + '\')">' + (estadoNorm === "Activo" ? "Inactivar" : "Activar") + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    });
+
+    html += '</tbody></table>';
+    cont.innerHTML = html;
+    cont.classList.remove("oculto");
+  }
+
+  function limpiarFormularioUsuarioAdmin() {
+    const ids = ["usuarioAdminCedulaOriginal", "usuarioAdminCedula", "usuarioAdminNombre", "usuarioAdminPassword"];
+    ids.forEach(function(id) { const el = document.getElementById(id); if (el) el.value = ""; });
+
+    const rol = document.getElementById("usuarioAdminRol");
+    const estado = document.getElementById("usuarioAdminEstado");
+    if (rol) rol.value = "";
+    if (estado) estado.value = "Activo";
+
+    const regional = document.getElementById("usuarioAdminRegional");
+    const distrito = document.getElementById("usuarioAdminDistrito");
+    const sede = document.getElementById("usuarioAdminCentroSede");
+    const grupo = document.getElementById("usuarioAdminGrupo");
+    if (regional) regional.value = "";
+    if (distrito) distrito.value = "";
+    if (sede) sede.value = "";
+    if (grupo) grupo.value = "";
+
+    const titulo = document.getElementById("tituloFormularioUsuarioAdmin");
+    if (titulo) titulo.textContent = "Crear usuario";
+
+    const cedula = document.getElementById("usuarioAdminCedula");
+    if (cedula) cedula.disabled = false;
+
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    if (mensaje) { mensaje.textContent = ""; mensaje.className = "mensaje"; }
+
+    actualizarAlcanceFormularioUsuarioAdmin();
+  }
+
+  function editarUsuarioAdmin(cedula) {
+    const u = usuariosAdminCache.find(function(x) { return normalizarTexto(x.cedula) === normalizarTexto(cedula); });
+    if (!u) return;
+
+    document.getElementById("usuarioAdminCedulaOriginal").value = u.cedula || "";
+    document.getElementById("usuarioAdminCedula").value = u.cedula || "";
+    document.getElementById("usuarioAdminCedula").disabled = true;
+    document.getElementById("usuarioAdminNombre").value = u.nombre || "";
+    document.getElementById("usuarioAdminRol").value = u.rol || "";
+    document.getElementById("usuarioAdminEstado").value = normalizarRol(u.estado) === "activo" ? "Activo" : "Inactivo";
+    document.getElementById("usuarioAdminPassword").value = "";
+
+    cargarSedesGestionUsuarios(function() {
+      cargarRegionalesUsuarioAdmin();
+      document.getElementById("usuarioAdminRegional").value = u.regional || "";
+      cargarDistritosUsuarioAdmin();
+      document.getElementById("usuarioAdminDistrito").value = u.distrito || "";
+      cargarSedesUsuarioAdmin();
+      document.getElementById("usuarioAdminCentroSede").value = u.centroSede || "";
+      document.getElementById("usuarioAdminGrupo").value = u.grupo || "";
+      actualizarAlcanceFormularioUsuarioAdmin();
+    });
+
+    const titulo = document.getElementById("tituloFormularioUsuarioAdmin");
+    if (titulo) titulo.textContent = "Editar usuario";
+
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    if (mensaje) { mensaje.textContent = "Editando usuario: " + (u.nombre || u.cedula); mensaje.className = "mensaje"; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function prepararResetPasswordUsuarioAdmin(cedula) {
+    editarUsuarioAdmin(cedula);
+    const input = document.getElementById("usuarioAdminPassword");
+    if (input) {
+      input.value = cedula;
+      input.focus();
+      input.select();
+    }
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    if (mensaje) {
+      mensaje.textContent = "Se preparó el restablecimiento de contraseña. Puede cambiarla antes de guardar.";
+      mensaje.className = "mensaje";
+    }
+  }
+
+  function construirPayloadUsuarioAdmin() {
+    return {
+      cedulaAdmin: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
+      cedulaOriginal: document.getElementById("usuarioAdminCedulaOriginal").value.trim(),
+      cedula: document.getElementById("usuarioAdminCedula").value.trim(),
+      nombre: document.getElementById("usuarioAdminNombre").value.trim(),
+      rol: document.getElementById("usuarioAdminRol").value,
+      regional: document.getElementById("usuarioAdminRegional").value,
+      distrito: document.getElementById("usuarioAdminDistrito").value,
+      centroSede: document.getElementById("usuarioAdminCentroSede").value,
+      grupo: document.getElementById("usuarioAdminGrupo").value,
+      estado: document.getElementById("usuarioAdminEstado").value,
+      password: document.getElementById("usuarioAdminPassword").value.trim()
+    };
+  }
+
+  function validarPayloadUsuarioAdmin(p) {
+    if (!p.cedula) return "Debe indicar la cédula.";
+    if (!p.nombre) return "Debe indicar el nombre completo.";
+    if (!p.rol) return "Debe seleccionar el rol.";
+
+    const requiereRegional = p.rol === "Técnico regional" || p.rol === "Técnico distrital" || p.rol === "Coordinador sede" || p.rol === "Facilitador";
+    const requiereDistrito = p.rol === "Técnico distrital" || p.rol === "Coordinador sede" || p.rol === "Facilitador";
+    const requiereSede = p.rol === "Coordinador sede" || p.rol === "Facilitador";
+    const requiereGrupo = p.rol === "Facilitador";
+
+    if (requiereRegional && !p.regional) return "Para este rol debe seleccionar una regional.";
+    if (requiereDistrito && !p.distrito) return "Para este rol debe seleccionar un distrito.";
+    if (requiereSede && !p.centroSede) return "Para este rol debe seleccionar un centro sede.";
+    if (requiereGrupo && !p.grupo) return "Para el rol Facilitador debe seleccionar un grupo.";
+    if (p.password && p.password.length < 6) return "La contraseña debe tener al menos 6 caracteres.";
+    return "";
+  }
+
+  function guardarUsuarioAdmin() {
+    if (!esAdministradorReal()) return;
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    const payload = construirPayloadUsuarioAdmin();
+    const error = validarPayloadUsuarioAdmin(payload);
+    if (error) {
+      if (mensaje) { mensaje.textContent = error; mensaje.className = "mensaje error"; }
+      return;
+    }
+
+    if (mensaje) { mensaje.textContent = "Guardando usuario..."; mensaje.className = "mensaje"; }
+
+    llamarBackend(
+      { accion: "guardarUsuario", payload: JSON.stringify(payload) },
+      function(resp) {
+        if (resp && resp.ok) {
+          if (mensaje) { mensaje.textContent = resp.mensaje || "Usuario guardado correctamente."; mensaje.className = "mensaje ok"; }
+          limpiarFormularioUsuarioAdmin();
+          listarUsuariosAdmin();
+        } else {
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudo guardar el usuario."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 20000 }
+    );
+  }
+
+  function cambiarEstadoUsuarioAdmin(cedula, nuevoEstado) {
+    if (!esAdministradorReal()) return;
+    if (!confirm("¿Desea cambiar el estado de este usuario a " + nuevoEstado + "?")) return;
+    const mensaje = document.getElementById("mensajeUsuarioAdmin");
+    if (mensaje) { mensaje.textContent = "Actualizando estado..."; mensaje.className = "mensaje"; }
+
+    llamarBackend(
+      {
+        accion: "cambiarEstadoUsuario",
+        payload: JSON.stringify({
+          cedulaAdmin: (usuarioSesion && usuarioSesion.cedula) || usuarioActual.cedula,
+          cedula: cedula,
+          estado: nuevoEstado
+        })
+      },
+      function(resp) {
+        if (resp && resp.ok) {
+          if (mensaje) { mensaje.textContent = resp.mensaje || "Estado actualizado."; mensaje.className = "mensaje ok"; }
+          listarUsuariosAdmin();
+        } else {
+          if (mensaje) { mensaje.textContent = (resp && resp.mensaje) || "No se pudo actualizar el estado."; mensaje.className = "mensaje error"; }
+        }
+      },
+      { timeout: 16000 }
+    );
+  }
+
+  function escapeJs(valor) {
+    return String(valor || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, " ").replace(/\r/g, " ");
+  }
   // ─── FIN ASIGNACIÓN AUTOMÁTICA ─────────────────────────────────────────────
 
   function escapeHtml(valor) {
